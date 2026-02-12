@@ -1,4 +1,4 @@
-import { db } from '@/firebase'; // firebase dosyanın bir üst klasörde olduğunu varsayıyoruz
+import { db } from './firebase';
 import { collection, getDocs } from 'firebase/firestore';
 
 // Veriyi çeken asenkron fonksiyon
