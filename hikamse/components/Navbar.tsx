@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { auth } from "@/app/firebase"; // Dosya yoluna dikkat
-import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, onAuthStateChanged } from "firebase/auth";
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
@@ -19,7 +19,8 @@ export default function Navbar() {
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      // Telefondan girenler için de en sağlıklısı budur
+      await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error("Giriş hatası:", error);
     }
