@@ -3,9 +3,11 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { auth } from "@/app/firebase"; // Dosya yoluna dikkat
 import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, onAuthStateChanged } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
+  const router = useRouter();
 
   // Sayfa açılınca kullanıcının giriş yapıp yapmadığını kontrol et
   useEffect(() => {
@@ -16,15 +18,15 @@ export default function Navbar() {
   }, []);
 
   // Google ile Giriş Yapma Fonksiyonu
-  const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      // Telefondan girenler için de en sağlıklısı budur
-      await signInWithRedirect(auth, provider);
-    } catch (error) {
-      console.error("Giriş hatası:", error);
-    }
-  };
+  // Eski ve sorunsuz yöntem (Popup)
+    const handleGoogleLogin = async () => {
+      const provider = new GoogleAuthProvider();
+      try {
+        await signInWithPopup(auth, provider); // Burayı Popup yaptık
+      } catch (error) {
+        console.error("Giriş hatası:", error);
+      }
+    };
 
   // Çıkış Yapma Fonksiyonu
   const handleLogout = async () => {
@@ -45,24 +47,38 @@ export default function Navbar() {
         <Link href="/gizem" className="hover:text-pink-400 transition">Gizem</Link>
       </div>
 
-      {/* Sağ Taraf: Arama ve Profil */}
+      {/* Sağ Taraf: Profil ve Giriş İşlemleri */}
       <div className="flex items-center space-x-4">
-        {/* Kullanıcı Giriş Yapmışsa Profil Resmini Göster */}
         {user ? (
+          // Giriş Yapılmışsa Görünecek Kısım
           <div className="flex items-center space-x-3">
-            <span className="text-sm hidden sm:block">Selam, {user.displayName.split(" ")[0]}</span>
-            <img 
-              src={user.photoURL} 
-              alt="Profil" 
-              className="w-10 h-10 rounded-full border-2 border-pink-500 cursor-pointer"
-              onClick={handleLogout} // Resme basınca çıkış yapsın (şimdilik)
-            />
+            <span className="text-sm hidden sm:block font-medium">
+              Selam, {user.displayName?.split(" ")[0]}
+            </span>
+            
+            {/* Profil Resmi (Tıklayınca /profile sayfasına gider) */}
+            <Link href="/profile">
+              <img 
+                src={user.photoURL || "https://via.placeholder.com/150"} 
+                alt="Profil" 
+                className="w-10 h-10 rounded-full border-2 border-pink-500 cursor-pointer hover:scale-110 hover:border-white transition"
+                title="Profilime Git"
+              />
+            </Link>
+
+            {/* Çıkış Butonu */}
+            <button 
+              onClick={handleLogout}
+              className="text-xs bg-gray-800 hover:bg-red-600 text-gray-300 hover:text-white px-3 py-1.5 rounded transition ml-2"
+            >
+              Çıkış
+            </button>
           </div>
         ) : (
-          // Giriş Yapmamışsa Butonu Göster
+          // Giriş Yapılmamışsa Görünecek Buton
           <button 
             onClick={handleGoogleLogin}
-            className="px-4 py-2 bg-pink-600 hover:bg-pink-700 rounded-full text-sm font-bold transition"
+            className="px-5 py-2 bg-pink-600 hover:bg-pink-700 rounded-full text-sm font-bold shadow-lg transition"
           >
             Giriş Yap
           </button>
