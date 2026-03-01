@@ -61,7 +61,11 @@ export default function Navbar() {
               <img 
                 src={user.photoURL || "https://via.placeholder.com/150"} 
                 alt="Profil" 
-                className="w-10 h-10 rounded-full border-2 border-pink-500 cursor-pointer hover:scale-110 hover:border-white transition"
+                // YENİ: Resim yüklenemezse isminin baş harfinden pembe bir logo yapar!
+                onError={(e) => {
+                  e.currentTarget.src = `https://ui-avatars.com/api/?name=${user.displayName || 'U'}&background=db2777&color=fff&bold=true`;
+                }}
+                className="w-10 h-10 rounded-full border-2 border-pink-500 cursor-pointer hover:scale-110 hover:border-white transition object-cover"
                 title="Profilime Git"
               />
             </Link>

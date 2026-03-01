@@ -15,6 +15,10 @@ export default function DramaDetail() {
   const [isAdded, setIsAdded] = useState(false);
   const [btnLoading, setBtnLoading] = useState(false);
 
+  // YENİ EKLENEN DURUMLAR (State)
+  const [userStatus, setUserStatus] = useState("Plan to Watch"); 
+  const [userRating, setUserRating] = useState<number>(0); 
+
   // 1. Kullanıcıyı ve Diziyi Çek
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -45,11 +49,14 @@ export default function DramaDetail() {
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       setIsAdded(true);
+      const data = docSnap.data();
+      setUserStatus(data.status || "Plan to Watch");
+      setUserRating(data.rating || 0);
     }
   };
 
-  // 3. BUTON TIKLAMA İŞLEMİ (Veritabanına Yaz/Sil)
-  const handleListToggle = async () => {
+  // 3. LİSTEYE KAYDET VEYA GÜNCELLE FONKSİYONU
+  const handleSaveToList = async () => {
     if (!user) {
       alert("Listeye eklemek için önce giriş yapmalısın!");
       return;
@@ -60,25 +67,37 @@ export default function DramaDetail() {
     const docRef = doc(db, "users", user.uid, "library", dramaId);
 
     try {
-      if (isAdded) {
-        // Ekliyse Sil
-        await deleteDoc(docRef);
-        setIsAdded(false);
-        alert("Listeden çıkarıldı.");
-      } else {
-        // Ekli Değilse Ekle
-        await setDoc(docRef, {
-          title: drama.title || "İsimsiz",
-          posterImage: drama.posterImage || "",
-          addedAt: new Date(),
-          status: "Plan to Watch"
-        });
-        setIsAdded(true);
-        alert("Listene eklendi! 🎉");
-      }
+      await setDoc(docRef, {
+        title: drama.title || "İsimsiz",
+        posterImage: drama.posterImage || "",
+        addedAt: new Date(),
+        status: userStatus, 
+        rating: userRating  
+      }, { merge: true }); 
+      
+      setIsAdded(true);
+      alert(isAdded ? "Listen güncellendi! ✅" : "Listene eklendi! 🎉");
     } catch (error) {
       console.error("Hata:", error);
       alert("Bir hata oluştu :(");
+    }
+    setBtnLoading(false);
+  };
+
+  // 4. LİSTEDEN TAMAMEN SİLME FONKSİYONU
+  const handleRemoveFromList = async () => {
+    if (!confirm("Bu diziyi listenden tamamen silmek istediğine emin misin?")) return;
+    
+    setBtnLoading(true);
+    const dramaId = id as string;
+    try {
+      await deleteDoc(doc(db, "users", user.uid, "library", dramaId));
+      setIsAdded(false);
+      setUserStatus("Plan to Watch"); 
+      setUserRating(0); 
+      alert("Listeden çıkarıldı.");
+    } catch (error) {
+      console.error("Hata:", error);
     }
     setBtnLoading(false);
   };
@@ -107,15 +126,76 @@ export default function DramaDetail() {
           
           <div className="mb-4 relative z-10">
             <h1 className="text-5xl font-bold mb-2">{drama.title}</h1>
-            <div className="flex items-center space-x-4 text-gray-300 text-sm">
+            <div className="flex items-center space-x-4 text-gray-300 text-sm mb-4"> 
               <span className="bg-pink-600 text-white px-2 py-1 rounded font-bold">{drama.ratingAvg} / 10</span>
               <span>{drama.releaseYear}</span>
+            </div>
+            
+            {/* KONTROL ÇUBUĞU */}
+            <div className="mt-4 flex flex-wrap items-center gap-8 bg-black/40 backdrop-blur-md p-3 rounded-2xl w-fit shadow-2xl">
+              
+              {/* Durum Seçici */}
+              <div className="relative">
+                <select 
+                  value={userStatus} 
+                  onChange={(e) => setUserStatus(e.target.value)}
+                  className="appearance-none bg-gray-800/80 hover:bg-gray-700 text-white text-sm font-semibold py-2.5 pl-4 pr-10 rounded-xl outline-none cursor-pointer transition-colors focus:ring-2 focus:ring-pink-500"
+                >
+                  <option value="Plan to Watch" className="bg-gray-900 text-white">📌 İzlenecekler</option>
+                  <option value="Watching" className="bg-gray-900 text-white">📺 İzliyorum</option>
+                  <option value="Completed" className="bg-gray-900 text-white">✅ Bitti</option>
+                  <option value="Dropped" className="bg-gray-900 text-white">❌ Bıraktım</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+
+              {/* Puan Seçici */}
+              <div className="relative">
+                <select 
+                  value={userRating} 
+                  onChange={(e) => setUserRating(Number(e.target.value))}
+                  className="appearance-none bg-gray-800/80 hover:bg-gray-700 text-white text-sm font-semibold py-2.5 pl-4 pr-10 rounded-xl outline-none cursor-pointer transition-colors focus:ring-2 focus:ring-pink-500"
+                >
+                  <option value={0} className="bg-gray-900 text-white">⭐ Puanım</option>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                    <option key={num} value={num} className="bg-gray-900 text-white">⭐ {num} / 10</option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+              </div>
+
+              {/* Araya İnce Bir Çizgi */}
+              {isAdded && <div className="w-px h-8 bg-white/20 hidden sm:block mx-1"></div>}
+
+              {/* Akıllı Butonlar (GÜNCELLENDİ) */}
+              {isAdded ? (
+                <div className="flex items-center space-x-3">
+                  {/* Güncelle Butonu */}
+                  <button onClick={handleSaveToList} disabled={btnLoading} className="bg-pink-600 hover:bg-pink-500 text-white px-8 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg hover:shadow-pink-500/30 flex items-center">
+                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    Güncelle
+                  </button>
+                  {/* Sil Butonu */}
+                  <button onClick={handleRemoveFromList} disabled={btnLoading} className="bg-red-600 hover:bg-red-500 text-white px-8 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg flex items-center">
+                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Sil
+                  </button>
+                </div>
+              ) : (
+                <button onClick={handleSaveToList} disabled={btnLoading} className="bg-pink-600 hover:bg-pink-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg hover:shadow-pink-500/30 flex items-center ml-1">
+                  <svg className="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                  Listeme Ekle
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* İÇERİK KISMI (Burayı geri getirdim!) */}
       <div className="relative z-20 container mx-auto px-8 mt-8 grid grid-cols-1 md:grid-cols-3 gap-12">
         
         {/* SOL TARAF: İnceleme ve Spoiler */}
@@ -140,9 +220,10 @@ export default function DramaDetail() {
           </section>
         </div>
 
-        {/* SAĞ TARAF: Fragman ve Buton */}
+        {/* SAĞ TARAF: Fragman */}
         <div className="space-y-6">
-          <div className="bg-gray-800 p-6 rounded-lg">
+
+          <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
              <h3 className="text-xl font-bold mb-4 text-white">Fragman</h3>
              <div className="aspect-video bg-black rounded overflow-hidden">
                 {drama.trailerUrl ? (
@@ -151,30 +232,6 @@ export default function DramaDetail() {
              </div>
           </div>
 
-          {/* İŞTE O EFSANE BUTON */}
-          <button 
-            type="button"
-            onClick={handleListToggle}
-            disabled={btnLoading}
-            className={`w-full py-4 rounded-lg font-bold text-lg transition shadow-lg flex justify-center items-center
-              ${isAdded 
-                ? "bg-gray-700 hover:bg-red-600 text-white" 
-                : "bg-pink-600 hover:bg-pink-700 text-white"
-              }`}
-          >
-            {btnLoading ? (
-              <span>İşleniyor...</span>
-            ) : isAdded ? (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                Listemde Ekli (Çıkar)
-              </>
-            ) : (
-              "+ Listeme Ekle"
-            )}
-          </button>
         </div>
 
       </div>
