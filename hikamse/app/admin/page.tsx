@@ -114,10 +114,17 @@ export default function AdminPanel() {
             <div>
               <label className="block text-sm font-bold text-gray-400 mb-2">Tür (Kategori)</label>
               <select name="genre" value={formData.genre} onChange={handleChange} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-pink-500 outline-none transition">
-                <option value="romantik">Romantik</option>
+                <option value="romantik">Romantik / Komedi</option>
+                <option value="korku">Korku / Gerilim</option>
                 <option value="gizem">Gizem</option>
-                <option value="komedi">Komedi</option>
+                <option value="polisiye">Polisiye</option>
+                <option value="fantastik">Fantastik</option>
+                <option value="bilim-kurgu">Bilim Kurgu</option>
+                <option value="dram">Dram</option>
                 <option value="aksiyon">Aksiyon</option>
+                <option value="aile">Aile</option>
+                <option value="tarihi">Tarihi</option>
+                <option value="program">Program</option>
               </select>
             </div>
             <div>
