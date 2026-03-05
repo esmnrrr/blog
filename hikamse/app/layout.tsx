@@ -25,10 +25,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Navbar />
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <div style={{ position: 'relative', zIndex: 9999 }}>
+          <Navbar />
+        </div>
         {children}
       </body>
     </html>
