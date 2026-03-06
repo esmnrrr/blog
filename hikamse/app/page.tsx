@@ -1,6 +1,7 @@
 import { db } from './firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import Hero from '@/components/Hero'; // Hero bileşenini çağırdık
+import Link from 'next/link';
 
 async function getDramas() {
   const querySnapshot = await getDocs(collection(db, "dramas"));
@@ -28,8 +29,12 @@ export default async function Home() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {dramas.map((drama: any) => (
-            <div key={drama.id} className="group relative bg-gray-800 rounded-lg overflow-hidden hover:scale-105 transition duration-300 shadow-lg">
-              {/* Kart Resmi */}
+            <Link 
+              href={`/drama/${drama.id}`} 
+              key={drama.id} 
+              className="group block relative bg-gray-800 rounded-lg overflow-hidden hover:scale-105 transition duration-300 shadow-lg cursor-pointer"
+            >              
+            {/* Kart Resmi */}
               <div className="aspect-[2/3] w-full bg-gray-700 relative">
                  {/* Eğer poster yoksa gri kutu göster */}
                  {drama.backdropImage ? (
@@ -48,7 +53,7 @@ export default async function Home() {
                   <span className="text-yellow-500">★ {drama.ratingAvg}</span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
