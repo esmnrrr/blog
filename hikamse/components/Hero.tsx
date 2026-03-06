@@ -67,11 +67,6 @@ export default function Hero({ dramas }: { dramas: any[] }) {
               </svg>
               İncelemeyi Oku
             </Link>
-
-            {/* Listeme Ekle Butonu */}
-            <button className="bg-gray-600/80 backdrop-blur-sm text-white px-6 py-3 rounded-md font-bold hover:bg-gray-500/80 transition">
-              + Listeme Ekle
-            </button>
         </div>
       </div>
       

@@ -1,14 +1,26 @@
 import { db } from './firebase';
 import { collection, getDocs } from 'firebase/firestore';
-import Hero from '@/components/Hero'; // Hero bileşenini çağırdık
+import Hero from '@/components/Hero'; 
 import Link from 'next/link';
 
 async function getDramas() {
+  // 1. Firebase'den filtrelemeden TÜM dizileri çekiyoruz (eskiler kaybolmasın diye)
   const querySnapshot = await getDocs(collection(db, "dramas"));
-  return querySnapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  
+  const dramasData = querySnapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      // Eğer tarihi varsa milisaniyeye çevir, yoksa (eski diziyse) 0 kabul et
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate().getTime() : 0
+    };
+  });
+
+  // 2. JavaScript ile en yeniden (büyük sayı) en eskiye (küçük sayı) doğru sıralıyoruz
+  dramasData.sort((a, b) => b.createdAt - a.createdAt);
+
+  return dramasData;
 }
 
 export default async function Home() {
@@ -18,8 +30,8 @@ export default async function Home() {
     <main className="min-h-screen bg-gray-900 text-white">
       
       {/* 1. HERO SECTION (En üstte Slider) */}
-      {/* Verileri Hero'ya gönderiyoruz */}
-      <Hero dramas={dramas} />
+      {/* JavaScript ile sıralanmış listenin sadece ilk 5'ini gönderiyoruz */}
+      <Hero dramas={dramas.slice(0, 5)} />
 
       {/* 2. DİĞER İÇERİKLER */}
       <div className="container mx-auto px-4 py-12">
@@ -34,9 +46,8 @@ export default async function Home() {
               key={drama.id} 
               className="group block relative bg-gray-800 rounded-lg overflow-hidden hover:scale-105 transition duration-300 shadow-lg cursor-pointer"
             >              
-            {/* Kart Resmi */}
+              {/* Kart Resmi */}
               <div className="aspect-[2/3] w-full bg-gray-700 relative">
-                 {/* Eğer poster yoksa gri kutu göster */}
                  {drama.backdropImage ? (
                    <img src={drama.backdropImage} alt={drama.title} className="w-full h-full object-cover" />
                  ) : (
