@@ -96,13 +96,13 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Kategori Barı - nav'ın İÇİNDE */}
+      {/* Kategori Barı */}
       {menuAcik && (
-        <div className="absolute top-[100%] left-0 w-full bg-gray-900 bg-opacity-75 backdrop-blur-md border-b border-pink-500/30 shadow-2xl py-8 z-[9999]">
+        <div className="absolute top-[100%] left-0 w-full bg-gray-900 bg-opacity-75 backdrop-blur-md border-b border-pink-500/30 shadow-2xl py-4 z-[9999]">
           
           <div className="flex justify-center w-full px-8">
             {/* 3'erli yan yana sıralama mantığı (Grid) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-20 gap-y-6 w-fit">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-20 gap-y-3 w-fit">
               <Link href="/kategori/romantik" className="text-gray-300 hover:text-pink-400 hover:-translate-y-1 transition-transform flex items-center gap-2"><span>💖</span><span>Romantik / Komedi</span></Link>
               <Link href="/kategori/korku" className="text-gray-300 hover:text-pink-400 hover:-translate-y-1 transition-transform flex items-center gap-2"><span>👻</span><span>Korku / Gerilim</span></Link>
               <Link href="/kategori/gizem" className="text-gray-300 hover:text-pink-400 hover:-translate-y-1 transition-transform flex items-center gap-2"><span>🕵️‍♂️</span><span>Gizem</span></Link>

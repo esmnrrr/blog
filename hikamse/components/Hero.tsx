@@ -14,7 +14,7 @@ export default function Hero({ dramas }: { dramas: any[] }) {
       setCurrentIndex((prevIndex) => 
         prevIndex === dramas.length - 1 ? 0 : prevIndex + 1
       );
-    }, 5000); // 5000ms = 5 saniye (İstersen 15000 yap)
+    }, 5000); // 5 saniyede bir geçiş yap
 
     return () => clearInterval(interval);
   }, [dramas]);
