@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { db, auth } from "@/app/firebase"; 
-import { doc, getDoc, setDoc, deleteDoc, collection, addDoc, query, orderBy, onSnapshot } from "firebase/firestore";import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc, getDocs, setDoc, deleteDoc, collection, addDoc, query, orderBy, onSnapshot, collectionGroup, where, updateDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
 import { useParams } from "next/navigation";
 
 export default function DramaDetail() {
@@ -124,6 +125,44 @@ export default function DramaDetail() {
     }
     setBtnLoading(false);
   };
+  
+  // ROZET BELİRLEME MOTORU
+  const getUserBadgeAndUpdateOlds = async (uid: string) => {
+    let newBadge = "🐣 Yeni İzleyici";
+
+    // 1. VIP Kontrolü
+    const userDocRef = doc(db, "users", uid);
+    const userDocSnap = await getDoc(userDocRef);
+    const isVip = userDocSnap.exists() && userDocSnap.data().role === "vip";
+
+    // 2. Tüm eski yorumları çek (Hem saymak hem de güncellemek için hazır elimizde!)
+    const commentsQuery = query(collectionGroup(db, "comments"), where("userId", "==", uid));
+    const commentsSnapshot = await getDocs(commentsQuery);
+
+    if (isVip) {
+      newBadge = "💎 VIP Üye";
+    } else {
+      const totalComments = commentsSnapshot.docs.length + 1; // Yeni atacağı ile birlikte
+      if (totalComments >= 50) newBadge = "👑 K-Drama Üstadı";
+      else if (totalComments >= 10) newBadge = "🍿 Dizi Kurdu";
+    }
+
+    // 3. SİHİRLİ KISIM: Eski yorumların rozetlerini kontrol et, eskiyse anında güncelle!
+    const updatePromises: any[] = [];
+    commentsSnapshot.docs.forEach((commentDoc) => {
+      // Eğer eski yorumun üstündeki rozet, şu an hak ettiğimiz rozetten farklıysa:
+      if (commentDoc.data().badge !== newBadge) {
+        updatePromises.push(updateDoc(commentDoc.ref, { badge: newBadge }));
+      }
+    });
+
+    // Varsa güncellemeleri arka planda saniyeler içinde hallet
+    if (updatePromises.length > 0) {
+      await Promise.all(updatePromises);
+    }
+
+    return newBadge;
+  };
 
   // 5. YORUM EKLEME FONKSİYONU
   const handleAddComment = async (e: React.FormEvent) => {
@@ -136,11 +175,15 @@ export default function DramaDetail() {
 
     setCommentLoading(true);
     try {
+      // Rozeti hesapla
+      const userBadge = await getUserBadgeAndUpdateOlds(user.uid);
+
       await addDoc(collection(db, "dramas", id as string, "comments"), {
         text: newComment,
         userId: user.uid,
         userName: user.displayName || "Anonim Kullanıcı",
         userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'U'}&background=db2777&color=fff`,
+        badge: userBadge, // YENİ EKLENDİ: Rozeti Mühürle
         createdAt: new Date()
       });
       setNewComment(""); // Yorum kutusunu temizle
@@ -162,16 +205,20 @@ export default function DramaDetail() {
 
     setCommentLoading(true);
     try {
+      // Rozeti hesapla
+      const userBadge = await getUserBadgeAndUpdateOlds(user.uid);
+
       await addDoc(collection(db, "dramas", id as string, "comments"), {
         text: replyText,
         userId: user.uid,
         userName: user.displayName || "Anonim Kullanıcı",
         userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'U'}&background=db2777&color=fff`,
+        badge: userBadge, // YENİ EKLENDİ: Rozeti Mühürle
         createdAt: new Date(),
-        parentId: parentId // Büyü burada: Bu yorumun bir "cevap" olduğunu belirtir!
+        parentId: parentId 
       });
       setReplyText("");
-      setReplyingTo(null); // Cevap kutusunu kapat
+      setReplyingTo(null);
     } catch (error) {
       console.error("Cevap eklenirken hata:", error);
       alert("Cevap eklenemedi :(");
@@ -422,8 +469,22 @@ export default function DramaDetail() {
                   <div className="flex items-start gap-3">
                     <img src={comment.userPhoto} alt={comment.userName} className="w-8 h-8 rounded-full object-cover mt-1" />
                     <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <h4 className="font-bold text-pink-400">{comment.userName}</h4>
+                      {/* ÜST BİLGİ ALANI (İsim + ROZET + Tarih) */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1 sm:gap-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-bold text-pink-400">{comment.userName}</h4>
+                          
+                          {/* ROZET RENDER ALANI */}
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold whitespace-nowrap ${
+                            comment.badge?.includes("VIP") ? "bg-purple-900/50 text-purple-300 border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)]" :
+                            comment.badge?.includes("Üstadı") ? "bg-yellow-900/50 text-yellow-300 border-yellow-500" :
+                            comment.badge?.includes("Kurdu") ? "bg-pink-900/50 text-pink-300 border-pink-500" :
+                            "bg-gray-700/50 text-gray-300 border-gray-600"
+                          }`}>
+                            {comment.badge || "🐣 Yeni İzleyici"}
+                          </span>
+                        </div>
+                        
                         <span className="text-xs text-gray-500">
                           {comment.createdAt?.toDate ? comment.createdAt.toDate().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : "Şimdi"}
                         </span>
@@ -470,13 +531,29 @@ export default function DramaDetail() {
                       .map(reply => (
                         <div key={reply.id} className="flex gap-3 bg-gray-900/50 p-3 rounded-lg border border-gray-700/50">
                           <img src={reply.userPhoto} alt={reply.userName} className="w-8 h-8 rounded-full object-cover" />
-                          <div>
-                            <div className="flex items-center space-x-2 mb-1">
-                              <h5 className="font-bold text-sm text-purple-400">{reply.userName}</h5>
+                          <div className="flex-1">
+                            
+                            {/* CEVAP İÇİN ÜST BİLGİ ALANI (İsim + ROZET + Tarih) */}
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 gap-1 sm:gap-0">
+                              <div className="flex items-center gap-2">
+                                <h5 className="font-bold text-sm text-purple-400">{reply.userName}</h5>
+                                
+                                {/* ROZET RENDER ALANI */}
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-bold whitespace-nowrap ${
+                                  reply.badge?.includes("VIP") ? "bg-purple-900/50 text-purple-300 border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)]" :
+                                  reply.badge?.includes("Üstadı") ? "bg-yellow-900/50 text-yellow-300 border-yellow-500" :
+                                  reply.badge?.includes("Kurdu") ? "bg-pink-900/50 text-pink-300 border-pink-500" :
+                                  "bg-gray-700/50 text-gray-300 border-gray-600"
+                                }`}>
+                                  {reply.badge || "🐣 Yeni İzleyici"}
+                                </span>
+                              </div>
+                              
                               <span className="text-[10px] text-gray-500">
                                 {reply.createdAt?.toDate ? reply.createdAt.toDate().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : "Şimdi"}
                               </span>
                             </div>
+                            
                             <p className="text-gray-300 text-sm">{reply.text}</p>
                           </div>
                         </div>

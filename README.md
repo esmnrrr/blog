@@ -43,9 +43,9 @@
 # "Top 10 Trend:" O hafta en çok tıklanan veya yorum alan diziler.
 # "Yakında Gelecekler:" Henüz yayınlanmamış ama heyecanla beklenenler.
 
-# giris yapan kisiler icin profil resmi ve nickname ekleyebilme ozelligi, yorumlarda nickname ve profil resmi gorulecek gercek ismi degil de
+# +++ giris yapan kisiler icin profil resmi ve nickname ekleyebilme ozelligi, yorumlarda nickname ve profil resmi gorulecek
 
-# sadik uyeler olacak, mesela toplam 50 yorum atan kisiye seviye 1 rozet verilecek o rozette nickname inin yaninda gorulecek, bazi uyelere ben ozel VIP rozeti verebilecegim onlar da kendi izledikleri dizileri ekleyebilecekler seklinde birkac tane rozetimiz olacak
+# +++ sadik uyeler olacak, mesela toplam 50 yorum atan kisiye seviye 1 rozet verilecek o rozette nickname inin yaninda gorulecek, bazi uyelere ben ozel VIP rozeti verebilecegim onlar da kendi izledikleri dizileri ekleyebilecekler seklinde birkac tane rozetimiz olacak
 
 # telefon optimizasyonu
 

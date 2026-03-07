@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { auth } from "@/app/firebase";
+import { auth, db } from "@/app/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 
 export default function Navbar() {
@@ -12,6 +13,25 @@ export default function Navbar() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      // Kullanıcı siteye girdiği an veritabanında kaydı var mı diye bak!
+      if (currentUser) {
+        const userRef = doc(db, "users", currentUser.uid);
+        
+        // async/await kullanmadan .then() ile en güvenli şekilde kontrol ediyoruz:
+        getDoc(userRef).then((userSnap) => {
+          // Eğer veritabanında kaydı yoksa hemen yeni dosya aç!
+          if (!userSnap.exists()) {
+            setDoc(userRef, {
+              uid: currentUser.uid,
+              email: currentUser.email,
+              displayName: currentUser.displayName,
+              photoURL: currentUser.photoURL,
+              role: "user", // Sisteme ilk giren herkes normal 'user'dır
+              createdAt: new Date()
+            });
+          }
+        }).catch((err) => console.error("Kayıt hatası:", err));
+      }
     });
     return () => unsubscribe();
   }, []);
