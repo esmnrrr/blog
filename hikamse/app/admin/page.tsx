@@ -20,6 +20,9 @@ export default function AdminPanel() {
     mood: "cerezlik",  
     cast: "",          
     episodeCount: "",
+    screenshot1: "",
+    screenshot2: "",
+    screenshot3: "",
     posterImage: "",
     backdropImage: "",
     trailerUrl: "",
@@ -65,6 +68,7 @@ export default function AdminPanel() {
       setFormData({
         title: "", releaseYear: "", ratingAvg: "", genre: "romantik", 
         mood: "cerezlik", cast: "", episodeCount: "", 
+        screenshot1: "", screenshot2: "", screenshot3: "",
         posterImage: "", backdropImage: "", trailerUrl: "", reviewIntro: "", reviewSpoiler: ""
       });
     } catch (error) {
@@ -170,7 +174,23 @@ export default function AdminPanel() {
             </div>
           </div>
 
-          {/* 4. Satır: İnceleme & Spoiler */}
+          {/* Ekran Görüntüleri */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-gray-400 mb-2">Ekran Görüntüsü 1 (Link)</label>
+              <input type="text" name="screenshot1" value={formData.screenshot1} onChange={handleChange} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-pink-500 outline-none transition" placeholder="https://..." />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-400 mb-2">Ekran Görüntüsü 2 (Link)</label>
+              <input type="text" name="screenshot2" value={formData.screenshot2} onChange={handleChange} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-pink-500 outline-none transition" placeholder="https://..." />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-400 mb-2">Ekran Görüntüsü 3 (Link)</label>
+              <input type="text" name="screenshot3" value={formData.screenshot3} onChange={handleChange} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-pink-500 outline-none transition" placeholder="https://..." />
+            </div>
+          </div>
+
+          {/* 5. Satır: İnceleme & Spoiler */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-bold text-gray-400 mb-2">İnceleme (Genel Bakış)</label>
