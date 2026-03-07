@@ -135,7 +135,7 @@ export default function DramaDetail() {
     const userDocSnap = await getDoc(userDocRef);
     const isVip = userDocSnap.exists() && userDocSnap.data().role === "vip";
 
-    // 2. Tüm eski yorumları çek (Hem saymak hem de güncellemek için hazır elimizde!)
+    // 2. Tüm eski yorumları çek
     const commentsQuery = query(collectionGroup(db, "comments"), where("userId", "==", uid));
     const commentsSnapshot = await getDocs(commentsQuery);
 
@@ -147,18 +147,39 @@ export default function DramaDetail() {
       else if (totalComments >= 10) newBadge = "🍿 Dizi Kurdu";
     }
 
-    // 3. SİHİRLİ KISIM: Eski yorumların rozetlerini kontrol et, eskiyse anında güncelle!
+    // 3. SİHİRLİ KISIM: Eski yorumları GARANTİLİ HACKER YÖNTEMİ ile güncelle!
+    let needScreenUpdate = false; 
     const updatePromises: any[] = [];
+    
     commentsSnapshot.docs.forEach((commentDoc) => {
       // Eğer eski yorumun üstündeki rozet, şu an hak ettiğimiz rozetten farklıysa:
       if (commentDoc.data().badge !== newBadge) {
-        updatePromises.push(updateDoc(commentDoc.ref, { badge: newBadge }));
+        
+        // İŞTE SİHİR BURADA: Dosya yolunu zorla parçalayıp tam ve kusursuz adresi buluyoruz!
+        const pathParts = commentDoc.ref.path.split('/'); 
+        if (pathParts.length >= 4) {
+          const dramaId = pathParts[1];
+          const commentId = commentDoc.id;
+          
+          // Kusursuz adresi oluştur
+          const safeRef = doc(db, "dramas", dramaId, "comments", commentId);
+          updatePromises.push(updateDoc(safeRef, { badge: newBadge }));
+          needScreenUpdate = true;
+        }
       }
     });
 
     // Varsa güncellemeleri arka planda saniyeler içinde hallet
     if (updatePromises.length > 0) {
       await Promise.all(updatePromises);
+    }
+
+    // EKRANI ANINDA GÜNCELLE
+    if (needScreenUpdate) {
+      const updatedComments = comments.map(c => 
+        c.userId === uid ? { ...c, badge: newBadge } : c
+      );
+      setComments(updatedComments);
     }
 
     return newBadge;
@@ -183,7 +204,7 @@ export default function DramaDetail() {
         userId: user.uid,
         userName: user.displayName || "Anonim Kullanıcı",
         userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'U'}&background=db2777&color=fff`,
-        badge: userBadge, // YENİ EKLENDİ: Rozeti Mühürle
+        badge: userBadge, // Rozeti Mühürle
         createdAt: new Date()
       });
       setNewComment(""); // Yorum kutusunu temizle
@@ -550,8 +571,7 @@ export default function DramaDetail() {
                               </div>
                               
                               <span className="text-[10px] text-gray-500">
-                                {reply.createdAt?.toDate ? reply.createdAt.toDate().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : "Şimdi"}
-                              </span>
+                                {reply.createdAt?.toDate ? reply.createdAt.toDate().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : "Şimdi"}                              </span>
                             </div>
                             
                             <p className="text-gray-300 text-sm">{reply.text}</p>
