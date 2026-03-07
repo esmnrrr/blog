@@ -1,15 +1,21 @@
 "use client";
 import { useEffect, useState } from "react";
 import { auth, db } from "@/app/firebase";
-import { collection, getDocs, collectionGroup, query, where } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
+import { collection, getDocs, collectionGroup, query, where, doc, updateDoc } from "firebase/firestore";
+import { onAuthStateChanged, updateProfile } from "firebase/auth";
 import Link from "next/link";
 
 export default function Profile() {
   const [user, setUser] = useState<any>(null);
   const [library, setLibrary] = useState<any[]>([]);
-  const [comments, setComments] = useState<any[]>([]); // YENİ: Yorumlar için state
+  const [comments, setComments] = useState<any[]>([]); // Yorumlar için state
   const [loading, setLoading] = useState(true);
+
+  // PROFİL GÜNCELLEME İÇİN STATE'LER
+  const [isEditing, setIsEditing] = useState(false);
+  const [newNickname, setNewNickname] = useState("");
+  const [newPhotoURL, setNewPhotoURL] = useState("");
+  const [updateLoading, setUpdateLoading] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -55,6 +61,58 @@ export default function Profile() {
 
     return () => unsubscribe();
   }, []);
+  
+  // PROFİLİ VE ESKİ YORUMLARI GÜNCELLEME FONKSİYONU
+  const handleUpdateProfile = async () => {
+    if (!user) return;
+    setUpdateLoading(true);
+    
+    try {
+      // 1. Yeni verileri belirle
+      const updatedName = newNickname || user.displayName;
+      const updatedPhoto = newPhotoURL || user.photoURL;
+
+      // 2. Firebase Auth'u (Kullanıcı Profilini) Güncelle
+      await updateProfile(user, {
+        displayName: updatedName,
+        photoURL: updatedPhoto
+      });
+      
+      // 3. Eski Yorumları Bul ve Güncelle!
+      // 'comments' state'imizde kullanıcının tüm yorumları var. Hepsini tek tek dönüp veritabanında güncelliyoruz.
+      const updatePromises = comments.map((comment) => {
+        if (comment.dramaId && comment.id) {
+          const commentRef = doc(db, "dramas", comment.dramaId, "comments", comment.id);
+          return updateDoc(commentRef, {
+            userName: updatedName,
+            userPhoto: updatedPhoto
+          });
+        }
+      });
+
+      // Bütün güncellemelerin bitmesini bekle
+      await Promise.all(updatePromises);
+      
+      alert("Profilin ve tüm eski yorumların başarıyla güncellendi! 🎉");
+      setIsEditing(false); // Düzenleme modunu kapat
+      
+      // 4. Ekranda anında değişsin diye kendi state'lerimizi güncelliyoruz
+      setUser({ ...user, displayName: updatedName, photoURL: updatedPhoto });
+      
+      // Profil sayfasındaki yorumlar listesi de anında güncel görünsün
+      const updatedComments = comments.map(c => ({
+        ...c,
+        userName: updatedName,
+        userPhoto: updatedPhoto
+      }));
+      setComments(updatedComments);
+      
+    } catch (error) {
+      console.error("Profil güncellenirken hata:", error);
+      alert("Güncelleme başarısız oldu :(");
+    }
+    setUpdateLoading(false);
+  };
 
   if (loading) return <div className="text-white text-center mt-20 font-bold text-xl">Profilin Yükleniyor... ⏳</div>;
   if (!user) return <div className="text-white text-center mt-20 font-bold text-xl">Bu sayfayı görmek için lütfen giriş yapın. 🛑</div>;
@@ -64,24 +122,90 @@ export default function Profile() {
       <div className="container mx-auto max-w-6xl">
         
         {/* PROFİL KARTI (Üst Kısım) */}
-        <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 bg-gray-800 p-8 rounded-xl mb-12 shadow-lg border border-gray-700">
-          <img 
-            src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'U'}&background=db2777&color=fff`} 
-            alt="Profil" 
-            className="w-24 h-24 rounded-full border-4 border-pink-500 shadow-xl object-cover" 
-          />
-          <div className="text-center md:text-left">
-            <h1 className="text-3xl font-bold">{user.displayName}</h1>
-            <p className="text-gray-400">{user.email}</p>
-            <div className="mt-3 flex gap-2 justify-center md:justify-start">
-              <span className="bg-pink-600/20 text-pink-400 text-sm font-bold px-4 py-1.5 rounded-full inline-block">
-                🎬 {library.length} Dizi Kayıtlı
-              </span>
-              <span className="bg-purple-600/20 text-purple-400 text-sm font-bold px-4 py-1.5 rounded-full inline-block">
-                💬 {comments.length} Yorum Yaptı
-              </span>
+        <div className="flex flex-col md:flex-row items-center justify-between bg-gray-800 p-8 rounded-xl mb-12 shadow-lg border border-gray-700 relative">
+          
+          {/* Sol Taraf: Resim ve Bilgiler */}
+          <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 w-full md:w-auto">
+            <img 
+              src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'U'}&background=db2777&color=fff`} 
+              alt="Profil" 
+              className="w-24 h-24 rounded-full border-4 border-pink-500 shadow-xl object-cover" 
+            />
+            <div className="text-center md:text-left">
+              <h1 className="text-3xl font-bold">{user.displayName}</h1>
+              <p className="text-gray-400">{user.email}</p>
+              <div className="mt-3 flex flex-wrap gap-2 justify-center md:justify-start">
+                <span className="bg-pink-600/20 text-pink-400 text-sm font-bold px-4 py-1.5 rounded-full inline-block">
+                  🎬 {library.length} Dizi Kayıtlı
+                </span>
+                <span className="bg-purple-600/20 text-purple-400 text-sm font-bold px-4 py-1.5 rounded-full inline-block">
+                  💬 {comments.length} Yorum Yaptı
+                </span>
+              </div>
             </div>
           </div>
+
+          {/* Sağ Taraf: Düzenle Butonu (Sadece isEditing false ise görünür) */}
+          {!isEditing && (
+            <button 
+              onClick={() => {
+                setNewNickname(user.displayName || "");
+                setNewPhotoURL(user.photoURL || "");
+                setIsEditing(true);
+              }}
+              className="mt-6 md:mt-0 bg-gray-700 hover:bg-gray-600 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition flex items-center shadow-md"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              Profili Düzenle
+            </button>
+          )}
+
+          {/* GİZLİ DÜZENLEME MENÜSÜ (Butona basınca açılır) */}
+          {isEditing && (
+            <div className="absolute top-full left-0 right-0 md:left-auto md:right-0 mt-4 bg-gray-900 border border-pink-500 p-6 rounded-xl shadow-2xl z-50 w-full md:w-96">
+              <h3 className="text-lg font-bold text-pink-500 mb-4 border-b border-gray-700 pb-2">HIKAMSE Kimliğini Güncelle</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-400 mb-1">Yeni Nickname</label>
+                  <input 
+                    type="text" 
+                    value={newNickname} 
+                    onChange={(e) => setNewNickname(e.target.value)} 
+                    className="w-full bg-gray-800 border border-gray-600 rounded p-2.5 text-white focus:border-pink-500 outline-none transition text-sm" 
+                    placeholder="Örn: KDramaQueen99" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-400 mb-1">Yeni Profil Resmi (URL)</label>
+                  <input 
+                    type="text" 
+                    value={newPhotoURL} 
+                    onChange={(e) => setNewPhotoURL(e.target.value)} 
+                    className="w-full bg-gray-800 border border-gray-600 rounded p-2.5 text-white focus:border-pink-500 outline-none transition text-sm" 
+                    placeholder="Resim linki yapıştırın (https://...)" 
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Sadece resim linki geçerlidir. (Örn: imgur, discord vb. linkleri)</p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-end space-x-3">
+                <button 
+                  onClick={() => setIsEditing(false)} 
+                  className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded font-bold text-sm transition"
+                >
+                  İptal
+                </button>
+                <button 
+                  onClick={handleUpdateProfile} 
+                  disabled={updateLoading}
+                  className="bg-pink-600 hover:bg-pink-500 text-white px-6 py-2 rounded font-bold text-sm transition shadow-lg disabled:opacity-50"
+                >
+                  {updateLoading ? "Kaydediliyor..." : "Kaydet"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* --- DİZİ KÜTÜPHANESİ --- */}
