@@ -182,6 +182,16 @@ export default function DramaDetail() {
   if (loading) return <div className="text-white text-center mt-20">Yükleniyor...</div>;
   if (!drama) return <div className="text-white text-center mt-20">Dizi bulunamadı :(</div>;
 
+  // Ruh hallerini şık yazılara çeviren sözlük
+  const moodMap: { [key: string]: string } = {
+    "cerezlik": "🍿 Çerezlik",
+    "aglatanlar": "😭 Ağlatanlar",
+    "beyin-yakan": "🤯 Beyin Yakanlar",
+    "kalp-isitan": "🥰 Kalp Isıtanlar",
+    "tirnak-yedirten": "💅 Tırnak Yedirten",
+    "ilham-veren": "✨ İlham Veren"
+  };
+
   return (
     <main className="min-h-screen bg-gray-900 text-white pb-20">
       
@@ -297,8 +307,39 @@ export default function DramaDetail() {
           </section>
         </div>
 
-        {/* SAĞ TARAF: Fragman */}
+        {/* SAĞ TARAF: Künye ve Fragman */}
         <div className="space-y-6">
+
+          {/* YENİ EKLENEN: DİZİ KÜNYESİ (BİLGİ KARTI) */}
+          <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 shadow-xl">
+            <h3 className="text-xl font-bold mb-4 text-pink-500 border-b border-gray-700 pb-2">Dizi Künyesi</h3>
+            
+            <div className="space-y-4 text-sm">
+              <div>
+                <span className="text-gray-400 block mb-1">🎭 Tür</span>
+                <span className="font-semibold text-white capitalize">{drama.genre || "Belirtilmemiş"}</span>
+              </div>
+              
+              <div>
+                <span className="text-gray-400 block mb-1">✨ Ruh Hali</span>
+                <span className="font-semibold text-purple-400">
+                  {drama.mood ? moodMap[drama.mood] : "Belirtilmemiş"}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-gray-400 block mb-1">📺 Bölüm Sayısı</span>
+                <span className="font-semibold text-white">{drama.episodeCount || "Belirtilmemiş"}</span>
+              </div>
+
+              <div>
+                <span className="text-gray-400 block mb-1">👥 Oyuncular</span>
+                <span className="font-semibold text-gray-200 leading-relaxed block">
+                  {drama.cast || "Belirtilmemiş"}
+                </span>
+              </div>
+            </div>
+          </div>
 
           <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
              <h3 className="text-xl font-bold mb-4 text-white">Fragman</h3>

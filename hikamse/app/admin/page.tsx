@@ -17,6 +17,9 @@ export default function AdminPanel() {
     releaseYear: "",
     ratingAvg: "",
     genre: "romantik", // Varsayılan tür
+    mood: "cerezlik",  
+    cast: "",          
+    episodeCount: "",
     posterImage: "",
     backdropImage: "",
     trailerUrl: "",
@@ -60,7 +63,8 @@ export default function AdminPanel() {
       
       // Eklendikten sonra formu tertemiz yap
       setFormData({
-        title: "", releaseYear: "", ratingAvg: "", genre: "romantik",
+        title: "", releaseYear: "", ratingAvg: "", genre: "romantik", 
+        mood: "cerezlik", cast: "", episodeCount: "", 
         posterImage: "", backdropImage: "", trailerUrl: "", reviewIntro: "", reviewSpoiler: ""
       });
     } catch (error) {
@@ -109,10 +113,10 @@ export default function AdminPanel() {
             </div>
           </div>
 
-          {/* 2. Satır: Tür, Poster, Arka Plan */}
+          {/* 2. Satır: Tür, Ruh Hali, Bölüm Sayısı */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <label className="block text-sm font-bold text-gray-400 mb-2">Tür (Kategori)</label>
+              <label className="block text-sm font-bold text-gray-400 mb-2">Ana Tür (Kategori) *</label>
               <select name="genre" value={formData.genre} onChange={handleChange} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-pink-500 outline-none transition">
                 <option value="romantik">Romantik / Komedi</option>
                 <option value="korku">Korku / Gerilim</option>
@@ -128,6 +132,31 @@ export default function AdminPanel() {
               </select>
             </div>
             <div>
+              <label className="block text-sm font-bold text-purple-400 mb-2">Ruh Hali (Yan Tür) *</label>
+              <select name="mood" value={formData.mood} onChange={handleChange} className="w-full bg-gray-900 border border-purple-500/50 rounded-lg p-3 text-white focus:border-purple-500 outline-none transition">
+                <option value="cerezlik">🍿 Çerezlik (Kafa Dağıtmalık)</option>
+                <option value="aglatanlar">😭 Ağlatanlar (Mendil Tüketen)</option>
+                <option value="beyin-yakan">🤯 Beyin Yakanlar</option>
+                <option value="kalp-isitan">🥰 Kalp Isıtanlar</option>
+                <option value="tirnak-yedirten">💅 Tırnak Yedirten (Gerilim)</option>
+                <option value="ilham-veren">✨ İlham Veren (Motive Edici)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-gray-400 mb-2">Bölüm Sayısı</label>
+              <input type="text" name="episodeCount" value={formData.episodeCount} onChange={handleChange} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-pink-500 outline-none transition" placeholder="Örn: 16 Bölüm" />
+            </div>
+          </div>
+
+          {/* 3. Satır: Oyuncular (Cast) */}
+          <div>
+            <label className="block text-sm font-bold text-gray-400 mb-2">Oyuncular (Cast)</label>
+            <input type="text" name="cast" value={formData.cast} onChange={handleChange} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-pink-500 outline-none transition" placeholder="Örn: Song Joong-ki, Jeon Yeo-been (Virgülle ayırın)" />
+          </div>
+
+          {/* 4. Satır: Poster, Arka Plan, Fragman */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
               <label className="block text-sm font-bold text-gray-400 mb-2">Afiş Linki (Dikey) *</label>
               <input required type="text" name="posterImage" value={formData.posterImage} onChange={handleChange} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-pink-500 outline-none transition" placeholder="https://..." />
             </div>
@@ -135,12 +164,10 @@ export default function AdminPanel() {
               <label className="block text-sm font-bold text-gray-400 mb-2">Arka Plan Linki (Yatay)</label>
               <input type="text" name="backdropImage" value={formData.backdropImage} onChange={handleChange} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-pink-500 outline-none transition" placeholder="https://..." />
             </div>
-          </div>
-
-          {/* 3. Satır: Fragman */}
-          <div>
-            <label className="block text-sm font-bold text-gray-400 mb-2">Fragman Linki (Youtube)</label>
-            <input type="text" name="trailerUrl" value={formData.trailerUrl} onChange={handleChange} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-pink-500 outline-none transition" placeholder="Örn: https://www.youtube.com/watch?v=..." />
+            <div>
+              <label className="block text-sm font-bold text-gray-400 mb-2">Fragman Linki (Youtube)</label>
+              <input type="text" name="trailerUrl" value={formData.trailerUrl} onChange={handleChange} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-pink-500 outline-none transition" placeholder="Örn: https://youtube.com/..." />
+            </div>
           </div>
 
           {/* 4. Satır: İnceleme & Spoiler */}
