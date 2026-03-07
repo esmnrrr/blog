@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { db, auth } from "@/app/firebase";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
@@ -30,18 +30,36 @@ export default function AdminPanel() {
     reviewSpoiler: ""
   });
 
-  // 1. GÜVENLİK DUVARI: Sadece Sen Girebilirsin!
+  // 1. ZEKİ GÜVENLİK DUVARI: Sadece Admin ve VIP'ler Girebilir!
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      // DİKKAT: Aşağıdaki mail adresini kendi tam Gmail adresinle değiştir!
-      if (currentUser && currentUser.email === "esmanurttk7@gmail.com") {
-        setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      
+      if (currentUser) {
+        try {
+          // Kullanıcının veritabanındaki "role" (yetki) belgesini çekiyoruz
+          const userDocRef = doc(db, "users", currentUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
+          // Eğer dosyası varsa ve yetkisi 'admin' VEYA 'vip' ise kapıyı aç:
+          if (userDocSnap.exists() && (userDocSnap.data().role === "admin" || userDocSnap.data().role === "vip")) {
+            setUser(currentUser);
+          } else {
+            // Dosyası yoksa veya normal "user" ise kov:
+            alert("Yetkisiz Giriş! Bu sayfaya sadece Yöneticiler ve VIP üyeler girebilir. 🛑");
+            router.push("/"); 
+          }
+        } catch (error) {
+          console.error("Güvenlik kontrolü hatası:", error);
+          router.push("/");
+        }
       } else {
-        alert("Yetkisiz Giriş! Sadece Esmanur bu sayfayı görebilir. 🛑");
-        router.push("/"); // Kov ve Ana sayfaya yolla
+        // Hiç giriş yapmamışsa zaten giremez:
+        router.push("/");
       }
+      
       setLoading(false);
     });
+    
     return () => unsubscribe();
   }, [router]);
 
