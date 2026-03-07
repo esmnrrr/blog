@@ -2,13 +2,20 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { auth, db } from "@/app/firebase";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
+import Fuse from "fuse.js";
 import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
   const [menuAcik, setMenuAcik] = useState(false);
   const [ruhHaliAcik, setRuhHaliAcik] = useState(false);
+
+  // ARAMA SİSTEMİ İÇİN STATE'LER
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [allDramas, setAllDramas] = useState<any[]>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -33,8 +40,41 @@ export default function Navbar() {
         }).catch((err) => console.error("Kayıt hatası:", err));
       }
     });
+
+    // SİTE AÇILDIĞINDA TÜM DİZİLERİ ÇEK
+    const fetchAllDramas = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "dramas"));
+        const dramas = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setAllDramas(dramas);
+      } catch (err) {
+        console.error("Diziler çekilemedi:", err);
+      }
+    };
+    fetchAllDramas();
+
     return () => unsubscribe();
   }, []);
+
+  // ZEKİ ARAMA MOTORU
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    if (query.length > 1) { // En az 2 harf yazılınca aramaya başla
+      const fuse = new Fuse(allDramas, {
+        keys: ["title", "cast", "genre"], // Sadece isimde değil, oyuncu ve türde de arasın!
+        threshold: 0.4, // Hata toleransı (0 = kusursuz, 1 = alakasız. 0.4 idealdir)
+      });
+      
+      const results = fuse.search(query);
+      setSearchResults(results.map(r => r.item).slice(0, 5)); // En iyi 5 sonucu al
+      setIsSearchOpen(true);
+    } else {
+      setSearchResults([]);
+      setIsSearchOpen(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
@@ -93,6 +133,57 @@ export default function Navbar() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
+
+          {/* ARAMA ÇUBUĞU */}
+          <div className="relative ml-4">
+            <div className="flex items-center bg-gray-800 border border-gray-600 rounded-full px-3 py-1.5 focus-within:border-pink-500 focus-within:ring-1 focus-within:ring-pink-500 transition-all w-64">
+              <svg className="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              <input 
+                type="text" 
+                value={searchQuery}
+                onChange={handleSearch}
+                placeholder="Dizi, oyuncu ara..." 
+                className="bg-transparent text-white text-sm outline-none w-full placeholder-gray-400"
+              />
+              {searchQuery && (
+                <button onClick={() => {setSearchQuery(""); setIsSearchOpen(false);}} className="text-gray-400 hover:text-pink-500 transition">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              )}
+            </div>
+
+            {/* ARAMA SONUÇLARI AÇILIR KUTUSU */}
+            {isSearchOpen && searchResults.length > 0 && (
+              <div className="absolute top-full mt-2 w-72 bg-gray-800 border border-gray-600 rounded-xl shadow-2xl overflow-hidden z-50 right-0 md:left-0">
+                {searchResults.map((drama) => (
+                  <Link 
+                    href={`/drama/${drama.id}`} 
+                    key={drama.id} 
+                    onClick={() => {setSearchQuery(""); setIsSearchOpen(false);}}
+                    className="flex items-center gap-3 p-3 hover:bg-gray-700 transition border-b border-gray-700/50 last:border-none"
+                  >
+                    <img src={drama.posterImage || drama.backdropImage || "https://via.placeholder.com/50"} alt={drama.title} className="w-10 h-14 object-cover rounded" />
+                    <div>
+                      <h4 className="text-sm font-bold text-white line-clamp-1">{drama.title}</h4>
+                      <div className="flex gap-2 mt-1">
+                        <span className="text-[10px] bg-pink-600/20 text-pink-400 px-1.5 py-0.5 rounded capitalize">{drama.genre || "Dizi"}</span>
+                        <span className="text-[10px] text-yellow-500 font-bold">⭐ {drama.ratingAvg}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+            
+            {/* BULUNAMADI DURUMU */}
+            {isSearchOpen && searchQuery.length > 1 && searchResults.length === 0 && (
+              <div className="absolute top-full mt-2 w-72 bg-gray-800 border border-gray-600 rounded-xl shadow-2xl p-4 text-center z-50 right-0 md:left-0">
+                <span className="text-2xl block mb-2">🕵️‍♂️</span>
+                <p className="text-sm text-gray-400">Sonuç bulunamadı.</p>
+              </div>
+            )}
+          </div>
+
         </div>
 
         {/* Sağ */}
