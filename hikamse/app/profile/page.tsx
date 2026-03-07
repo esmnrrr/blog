@@ -8,7 +8,7 @@ import Link from "next/link";
 export default function Profile() {
   const [user, setUser] = useState<any>(null);
   const [library, setLibrary] = useState<any[]>([]);
-  const [comments, setComments] = useState<any[]>([]); // Yorumlar için state
+  const [comments, setComments] = useState<any[]>([]); 
   const [loading, setLoading] = useState(true);
 
   // PROFİL GÜNCELLEME İÇİN STATE'LER
@@ -32,17 +32,20 @@ export default function Profile() {
         }));
         setLibrary(userDramas);
 
-        // 2. KULLANICININ TÜM YORUMLARINI ÇEK (Sihirli Kısım)
+        // 2. KULLANICININ TÜM YORUMLARINI ÇEK (İşte düzeltilmiş SİHİRLİ KISIM burası)
         try {
-          // Bütün 'comments' alt klasörlerinde 'userId'si benim olanları bul!
           const commentsQuery = query(collectionGroup(db, "comments"), where("userId", "==", currentUser.uid));
           const commentsSnapshot = await getDocs(commentsQuery);
           
-          const userComments = commentsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            dramaId: doc.ref.parent.parent?.id, // Yorumun yapıldığı dizinin ID'sini gizlice alıyoruz ki link verebilelim
-            ...doc.data()
-          }));
+          const userComments = commentsSnapshot.docs.map(doc => {
+            // HACKER YÖNTEMİ: Dosya yolunu (Path) böl ve Dizi ID'sini zorla al!
+            const pathParts = doc.ref.path.split('/'); 
+            return {
+              id: doc.id,
+              dramaId: pathParts[1], // Artık %100 Garantili Dizi ID'si elimizde!
+              ...doc.data()
+            };
+          });
 
           // Yorumları en yeniden en eskiye sırala
           userComments.sort((a: any, b: any) => {
@@ -68,18 +71,16 @@ export default function Profile() {
     setUpdateLoading(true);
     
     try {
-      // 1. Yeni verileri belirle
       const updatedName = newNickname || user.displayName;
       const updatedPhoto = newPhotoURL || user.photoURL;
 
-      // 2. Firebase Auth'u (Kullanıcı Profilini) Güncelle
+      // 1. Firebase Auth'u Güncelle (Kendi Profilin)
       await updateProfile(user, {
         displayName: updatedName,
         photoURL: updatedPhoto
       });
       
-      // 3. Eski Yorumları Bul ve Güncelle!
-      // 'comments' state'imizde kullanıcının tüm yorumları var. Hepsini tek tek dönüp veritabanında güncelliyoruz.
+      // 2. Eski Yorumları Bul ve Güncelle!
       const updatePromises = comments.map((comment) => {
         if (comment.dramaId && comment.id) {
           const commentRef = doc(db, "dramas", comment.dramaId, "comments", comment.id);
@@ -94,12 +95,11 @@ export default function Profile() {
       await Promise.all(updatePromises);
       
       alert("Profilin ve tüm eski yorumların başarıyla güncellendi! 🎉");
-      setIsEditing(false); // Düzenleme modunu kapat
+      setIsEditing(false); 
       
-      // 4. Ekranda anında değişsin diye kendi state'lerimizi güncelliyoruz
+      // 3. Ekranda anında değişsin diye kendi state'lerimizi güncelliyoruz
       setUser({ ...user, displayName: updatedName, photoURL: updatedPhoto });
       
-      // Profil sayfasındaki yorumlar listesi de anında güncel görünsün
       const updatedComments = comments.map(c => ({
         ...c,
         userName: updatedName,
@@ -121,10 +121,9 @@ export default function Profile() {
     <main className="min-h-screen bg-gray-900 text-white p-8 pb-20">
       <div className="container mx-auto max-w-6xl">
         
-        {/* PROFİL KARTI (Üst Kısım) */}
+        {/* PROFİL KARTI */}
         <div className="flex flex-col md:flex-row items-center justify-between bg-gray-800 p-8 rounded-xl mb-12 shadow-lg border border-gray-700 relative">
           
-          {/* Sol Taraf: Resim ve Bilgiler */}
           <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 w-full md:w-auto">
             <img 
               src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'U'}&background=db2777&color=fff`} 
@@ -145,7 +144,7 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Sağ Taraf: Düzenle Butonu (Sadece isEditing false ise görünür) */}
+          {/* Düzenle Butonu */}
           {!isEditing && (
             <button 
               onClick={() => {
@@ -160,7 +159,7 @@ export default function Profile() {
             </button>
           )}
 
-          {/* GİZLİ DÜZENLEME MENÜSÜ (Butona basınca açılır) */}
+          {/* GİZLİ DÜZENLEME MENÜSÜ */}
           {isEditing && (
             <div className="absolute top-full left-0 right-0 md:left-auto md:right-0 mt-4 bg-gray-900 border border-pink-500 p-6 rounded-xl shadow-2xl z-50 w-full md:w-96">
               <h3 className="text-lg font-bold text-pink-500 mb-4 border-b border-gray-700 pb-2">HIKAMSE Kimliğini Güncelle</h3>
@@ -185,7 +184,6 @@ export default function Profile() {
                     className="w-full bg-gray-800 border border-gray-600 rounded p-2.5 text-white focus:border-pink-500 outline-none transition text-sm" 
                     placeholder="Resim linki yapıştırın (https://...)" 
                   />
-                  <p className="text-xs text-gray-500 mt-1">Sadece resim linki geçerlidir. (Örn: imgur, discord vb. linkleri)</p>
                 </div>
               </div>
 
@@ -237,13 +235,10 @@ export default function Profile() {
                   
                   <div className="p-4 flex flex-col flex-grow justify-between">
                     <h3 className="font-bold text-sm text-white line-clamp-2">{drama.title}</h3>
-                    
-                    {/* STATÜ VE PUAN KISMI */}
                     <div className="mt-3 flex justify-between items-center">
                       <span className="text-[11px] text-pink-400 font-semibold bg-pink-900/30 px-2 py-1 rounded truncate max-w-[60%]">
                         {drama.status}
                       </span>
-                      {/* Puan 0'dan büyükse Yıldızı Göster */}
                       {drama.rating > 0 && (
                         <span className="text-xs font-bold text-yellow-500 bg-gray-900 px-2 py-1 rounded border border-yellow-500/30">
                           ⭐ {drama.rating}
@@ -251,7 +246,6 @@ export default function Profile() {
                       )}
                     </div>
                   </div>
-                  
                 </div>
               </Link>
             ))}
@@ -276,7 +270,6 @@ export default function Profile() {
               <div key={comment.id} className="bg-gray-800/80 p-5 rounded-xl border border-gray-700 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center hover:border-purple-500/50 transition-colors">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    {/* Eğer bu bir cevap (reply) ise küçük bir ok göster */}
                     {comment.parentId && (
                       <span className="bg-gray-700 text-xs px-2 py-0.5 rounded text-gray-300">Cevap</span>
                     )}
@@ -287,7 +280,6 @@ export default function Profile() {
                   <p className="text-gray-300 whitespace-pre-line text-sm font-medium">"{comment.text}"</p>
                 </div>
                 
-                {/* Hangi diziye yorum yaptıysa o diziye giden buton */}
                 {comment.dramaId && (
                   <Link href={`/drama/${comment.dramaId}`} className="text-xs bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg font-bold transition shrink-0 flex items-center gap-1 shadow-lg shadow-purple-500/20 mt-3 sm:mt-0">
                     Diziye Git <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
