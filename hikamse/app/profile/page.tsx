@@ -32,22 +32,20 @@ export default function Profile() {
         }));
         setLibrary(userDramas);
 
-        // 2. KULLANICININ TÜM YORUMLARINI ÇEK (İşte düzeltilmiş SİHİRLİ KISIM burası)
+        // 2. KULLANICININ TÜM YORUMLARINI ÇEK
         try {
           const commentsQuery = query(collectionGroup(db, "comments"), where("userId", "==", currentUser.uid));
           const commentsSnapshot = await getDocs(commentsQuery);
           
           const userComments = commentsSnapshot.docs.map(doc => {
-            // HACKER YÖNTEMİ: Dosya yolunu (Path) böl ve Dizi ID'sini zorla al!
             const pathParts = doc.ref.path.split('/'); 
             return {
               id: doc.id,
-              dramaId: pathParts[1], // Artık %100 Garantili Dizi ID'si elimizde!
+              dramaId: pathParts[1], 
               ...doc.data()
             };
           });
 
-          // Yorumları en yeniden en eskiye sırala
           userComments.sort((a: any, b: any) => {
             const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
             const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
@@ -74,13 +72,11 @@ export default function Profile() {
       const updatedName = newNickname || user.displayName;
       const updatedPhoto = newPhotoURL || user.photoURL;
 
-      // 1. Firebase Auth'u Güncelle (Kendi Profilin)
       await updateProfile(user, {
         displayName: updatedName,
         photoURL: updatedPhoto
       });
       
-      // 2. Eski Yorumları Bul ve Güncelle!
       const updatePromises = comments.map((comment) => {
         if (comment.dramaId && comment.id) {
           const commentRef = doc(db, "dramas", comment.dramaId, "comments", comment.id);
@@ -91,13 +87,11 @@ export default function Profile() {
         }
       });
 
-      // Bütün güncellemelerin bitmesini bekle
       await Promise.all(updatePromises);
       
       alert("Profilin ve tüm eski yorumların başarıyla güncellendi! 🎉");
       setIsEditing(false); 
       
-      // 3. Ekranda anında değişsin diye kendi state'lerimizi güncelliyoruz
       setUser({ ...user, displayName: updatedName, photoURL: updatedPhoto });
       
       const updatedComments = comments.map(c => ({
@@ -122,7 +116,7 @@ export default function Profile() {
       <div className="container mx-auto max-w-6xl">
         
         {/* PROFİL KARTI */}
-        <div className="flex flex-col md:flex-row items-center justify-between bg-gray-800 p-8 rounded-xl mb-12 shadow-lg border border-gray-700 relative">
+        <div className="flex flex-col md:flex-row items-start justify-between bg-gray-800 p-8 rounded-xl mb-12 shadow-lg border border-gray-700 relative">
           
           <div className="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6 w-full md:w-auto">
             <img 
@@ -130,9 +124,10 @@ export default function Profile() {
               alt="Profil" 
               className="w-24 h-24 rounded-full border-4 border-pink-500 shadow-xl object-cover" 
             />
-            <div className="text-center md:text-left">
+            <div className="text-center md:text-left flex-1">
               <h1 className="text-3xl font-bold">{user.displayName}</h1>
               <p className="text-gray-400">{user.email}</p>
+              
               <div className="mt-3 flex flex-wrap gap-2 justify-center md:justify-start">
                 <span className="bg-pink-600/20 text-pink-400 text-sm font-bold px-4 py-1.5 rounded-full inline-block">
                   🎬 {library.length} Dizi Kayıtlı
@@ -141,6 +136,30 @@ export default function Profile() {
                   💬 {comments.length} Yorum Yaptı
                 </span>
               </div>
+
+              {/* YEPYENİ: PROFİLDEKİ ROZET KOLEKSİYONU */}
+              <div className="mt-6 border-t border-gray-700/50 pt-4">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 text-center md:text-left">Kazanılan Rozetler</h4>
+                <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                  {comments.length === 0 ? (
+                     <span className="bg-gray-700/50 text-gray-300 border border-gray-600 text-xs px-3 py-1 rounded-full font-bold">🐣 Hoş Geldin</span>
+                  ) : (
+                     (comments[0].badges || (comments[0].badge ? [comments[0].badge] : ["🐣 Hoş Geldin"])).map((badge: string, idx: number) => (
+                       <span key={idx} className={`text-xs px-3 py-1 rounded-full border font-bold shadow-md ${
+                         badge?.includes("VIP") ? "bg-purple-900/50 text-purple-300 border-purple-500" :
+                         badge?.includes("Üstadı") ? "bg-yellow-900/50 text-yellow-300 border-yellow-500" :
+                         badge?.includes("Kurdu") ? "bg-pink-900/50 text-pink-300 border-pink-500" :
+                         badge?.includes("Sosyal") ? "bg-blue-900/50 text-blue-300 border-blue-500" :
+                         badge?.includes("Yıllık") ? "bg-green-900/50 text-green-300 border-green-500" :
+                         "bg-gray-700/50 text-gray-300 border-gray-600"
+                       }`}>
+                         {badge}
+                       </span>
+                     ))
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -152,7 +171,7 @@ export default function Profile() {
                 setNewPhotoURL(user.photoURL || "");
                 setIsEditing(true);
               }}
-              className="mt-6 md:mt-0 bg-gray-700 hover:bg-gray-600 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition flex items-center shadow-md"
+              className="mt-6 md:mt-0 bg-gray-700 hover:bg-gray-600 text-white px-5 py-2.5 rounded-lg font-bold text-sm transition flex items-center shadow-md shrink-0"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
               Profili Düzenle
@@ -269,14 +288,31 @@ export default function Profile() {
             {comments.map((comment) => (
               <div key={comment.id} className="bg-gray-800/80 p-5 rounded-xl border border-gray-700 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center hover:border-purple-500/50 transition-colors">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
+                  
+                  {/* Yorumlar Listesindeki Çoklu Rozet Gösterimi */}
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     {comment.parentId && (
-                      <span className="bg-gray-700 text-xs px-2 py-0.5 rounded text-gray-300">Cevap</span>
+                      <span className="bg-gray-700 text-[10px] px-2 py-0.5 rounded text-gray-300 font-bold uppercase tracking-wider">Cevap</span>
                     )}
-                    <span className="text-xs text-gray-500">
+                    
+                    {(comment.badges || (comment.badge ? [comment.badge] : ["🐣 Hoş Geldin"])).map((badge: string, idx: number) => (
+                      <span key={idx} className={`text-[9px] px-1.5 py-0.5 rounded-full border font-bold whitespace-nowrap ${
+                        badge.includes("VIP") ? "bg-purple-900/50 text-purple-300 border-purple-500" :
+                        badge.includes("Üstadı") ? "bg-yellow-900/50 text-yellow-300 border-yellow-500" :
+                        badge.includes("Kurdu") ? "bg-pink-900/50 text-pink-300 border-pink-500" :
+                        badge.includes("Sosyal") ? "bg-blue-900/50 text-blue-300 border-blue-500" :
+                        badge.includes("Yıllık") ? "bg-green-900/50 text-green-300 border-green-500" :
+                        "bg-gray-700/50 text-gray-300 border-gray-600"
+                      }`}>
+                        {badge}
+                      </span>
+                    ))}
+
+                    <span className="text-xs text-gray-500 ml-auto sm:ml-2">
                       {comment.createdAt?.toDate ? comment.createdAt.toDate().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : "Şimdi"}
                     </span>
                   </div>
+
                   <p className="text-gray-300 whitespace-pre-line text-sm font-medium">"{comment.text}"</p>
                 </div>
                 
