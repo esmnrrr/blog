@@ -47,7 +47,7 @@
 
 # +++ sadik uyeler olacak, mesela toplam 50 yorum atan kisiye seviye 1 rozet verilecek o rozette nickname inin yaninda gorulecek, bazi uyelere ben ozel VIP rozeti verebilecegim onlar da kendi izledikleri dizileri ekleyebilecekler seklinde birkac tane rozetimiz olacak
 
-# izlenecekler in adini izlemeye gidiyorum yapacagim, rozetler de 1-10 arasi hosgeldin rozeti diye adi degisecej, sure bazinda da 1 yillik, 2 yillik rozetleri ayrica da sosyal medya dan takip edenlere ozel bir rozet de verilecek. Yan yana yorum rozeti, yil rozeti ve sosyal medya rozeti gorunebilecek. Rozetler profil sayfasinda da gorunecek
+# +++ izlenecekler in adini izlemeye gidiyorum yapacagim, rozetler de 1-10 arasi hosgeldin rozeti diye adi degisecej, sure bazinda da 1 yillik, 2 yillik rozetleri ayrica da sosyal medya dan takip edenlere ozel bir rozet de verilecek. Yan yana yorum rozeti, yil rozeti ve sosyal medya rozeti gorunebilecek. Rozetler profil sayfasinda da gorunecek
 
 # vip dizi eklediginde ana sayfa da cikmiyor 
 
