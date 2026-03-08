@@ -15,7 +15,6 @@ export default function DramaDetail() {
   const [isAdded, setIsAdded] = useState(false);
   const [btnLoading, setBtnLoading] = useState(false);
 
-  // YENİ EKLENEN DURUMLAR (State)
   const [userStatus, setUserStatus] = useState("Plan to Watch"); 
   const [userRating, setUserRating] = useState<number>(0); 
   const [comments, setComments] = useState<any[]>([]);
@@ -44,7 +43,6 @@ export default function DramaDetail() {
       setLoading(false);
     }
 
-    // Yorumları Canlı (Real-time) Dinle!
     function fetchComments() {
       if (!id) return;
       const q = query(collection(db, "dramas", id as string, "comments"), orderBy("createdAt", "desc"));
@@ -59,15 +57,14 @@ export default function DramaDetail() {
     }
 
     fetchDrama();
-    const unsubComments = fetchComments(); // Yorumları başlat
+    const unsubComments = fetchComments();
 
     return () => {
       unsubscribeAuth();
-      if (unsubComments) unsubComments(); // Sayfadan çıkınca dinlemeyi durdur
+      if (unsubComments) unsubComments();
     };
   }, [id]);
 
-  // 2. Listede Ekli mi Kontrol Et
   const checkIfAdded = async (uid: string, dramaId: string) => {
     const docRef = doc(db, "users", uid, "library", dramaId);
     const docSnap = await getDoc(docRef);
@@ -79,7 +76,6 @@ export default function DramaDetail() {
     }
   };
 
-  // 3. LİSTEYE KAYDET VEYA GÜNCELLE FONKSİYONU
   const handleSaveToList = async () => {
     if (!user) {
       alert("Listeye eklemek için önce giriş yapmalısın!");
@@ -108,7 +104,6 @@ export default function DramaDetail() {
     setBtnLoading(false);
   };
 
-  // 4. LİSTEDEN TAMAMEN SİLME FONKSİYONU
   const handleRemoveFromList = async () => {
     if (!confirm("Bu diziyi listenden tamamen silmek istediğine emin misin?")) return;
     
@@ -126,63 +121,72 @@ export default function DramaDetail() {
     setBtnLoading(false);
   };
   
-  // ROZET BELİRLEME MOTORU
-  const getUserBadgeAndUpdateOlds = async (uid: string) => {
-    let newBadge = "🐣 Yeni İzleyici";
+  // --- YEPYENİ: ÇOKLU ROZET KOLEKSİYONU MOTORU ---
+  const getUserBadgesAndUpdateOlds = async (uid: string) => {
+    const newBadges: string[] = [];
 
-    // 1. VIP Kontrolü
+    // 1. Kullanıcı Verisini Çek (Tarih, VIP ve Sosyal Medya için)
     const userDocRef = doc(db, "users", uid);
     const userDocSnap = await getDoc(userDocRef);
-    const isVip = userDocSnap.exists() && userDocSnap.data().role === "vip";
+    const userData = userDocSnap.exists() ? userDocSnap.data() : null;
 
-    // 2. Tüm eski yorumları çek
+    // 2. Yorum Sayısını Çek
     const commentsQuery = query(collectionGroup(db, "comments"), where("userId", "==", uid));
     const commentsSnapshot = await getDocs(commentsQuery);
+    const totalComments = commentsSnapshot.docs.length + 1; // Yeni atacağı dahil
 
-    if (isVip) {
-      newBadge = "💎 VIP Üye";
-    } else {
-      const totalComments = commentsSnapshot.docs.length + 1; // Yeni atacağı ile birlikte
-      if (totalComments >= 50) newBadge = "👑 K-Drama Üstadı";
-      else if (totalComments >= 10) newBadge = "🍿 Dizi Kurdu";
+    // --- ROZETLERİ BELİRLE (ARRAY OLARAK) ---
+    
+    // A. Yorum Rozeti (1-10 Hoş Geldin)
+    if (totalComments >= 50) newBadges.push("👑 K-Drama Üstadı");
+    else if (totalComments >= 10) newBadges.push("🍿 Dizi Kurdu");
+    else newBadges.push("🐣 Hoş Geldin");
+
+    // B. VIP Rozeti
+    if (userData?.role === "vip") newBadges.push("💎 VIP Üye");
+
+    // C. Süre Rozeti (Kaç gündür üye?)
+    if (userData?.createdAt) {
+      const createdDate = userData.createdAt.toDate();
+      const diffDays = Math.floor((new Date().getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays >= 730) newBadges.push("⏳ 2 Yıllık Üye");
+      else if (diffDays >= 365) newBadges.push("⏳ 1 Yıllık Üye");
     }
 
-    // 3. SİHİRLİ KISIM: Eski yorumları GARANTİLİ HACKER YÖNTEMİ ile güncelle!
+    // D. Sosyal Medya Rozeti
+    if (userData?.socialFollower === true) newBadges.push("📱 Sosyal Medya");
+
+    // 3. ESKİ YORUMLARI YENİ ROZET KOLEKSİYONU İLE GÜNCELLE
     let needScreenUpdate = false; 
     const updatePromises: any[] = [];
     
     commentsSnapshot.docs.forEach((commentDoc) => {
-      // Eğer eski yorumun üstündeki rozet, şu an hak ettiğimiz rozetten farklıysa:
-      if (commentDoc.data().badge !== newBadge) {
-        
-        // İŞTE SİHİR BURADA: Dosya yolunu zorla parçalayıp tam ve kusursuz adresi buluyoruz!
+      // Eski yapıyı yeni dizi (array) yapısına uyarlıyoruz
+      const currentBadges = commentDoc.data().badges || (commentDoc.data().badge ? [commentDoc.data().badge] : ["🐣 Hoş Geldin"]);
+      
+      // Rozetler değişmiş mi?
+      if (JSON.stringify(currentBadges) !== JSON.stringify(newBadges)) {
         const pathParts = commentDoc.ref.path.split('/'); 
         if (pathParts.length >= 4) {
-          const dramaId = pathParts[1];
-          const commentId = commentDoc.id;
-          
-          // Kusursuz adresi oluştur
-          const safeRef = doc(db, "dramas", dramaId, "comments", commentId);
-          updatePromises.push(updateDoc(safeRef, { badge: newBadge }));
+          const safeRef = doc(db, "dramas", pathParts[1], "comments", commentDoc.id);
+          updatePromises.push(updateDoc(safeRef, { badges: newBadges })); // 'badge' yerine 'badges' kullanıyoruz
           needScreenUpdate = true;
         }
       }
     });
 
-    // Varsa güncellemeleri arka planda saniyeler içinde hallet
     if (updatePromises.length > 0) {
       await Promise.all(updatePromises);
     }
 
-    // EKRANI ANINDA GÜNCELLE
     if (needScreenUpdate) {
       const updatedComments = comments.map(c => 
-        c.userId === uid ? { ...c, badge: newBadge } : c
+        c.userId === uid ? { ...c, badges: newBadges } : c
       );
       setComments(updatedComments);
     }
 
-    return newBadge;
+    return newBadges;
   };
 
   // 5. YORUM EKLEME FONKSİYONU
@@ -196,18 +200,18 @@ export default function DramaDetail() {
 
     setCommentLoading(true);
     try {
-      // Rozeti hesapla
-      const userBadge = await getUserBadgeAndUpdateOlds(user.uid);
+      // Çoklu rozetleri hesapla
+      const userBadges = await getUserBadgesAndUpdateOlds(user.uid);
 
       await addDoc(collection(db, "dramas", id as string, "comments"), {
         text: newComment,
         userId: user.uid,
         userName: user.displayName || "Anonim Kullanıcı",
         userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'U'}&background=db2777&color=fff`,
-        badge: userBadge, // Rozeti Mühürle
+        badges: userBadges, // DİKKAT: badge yerine badges (array) kaydediyoruz
         createdAt: new Date()
       });
-      setNewComment(""); // Yorum kutusunu temizle
+      setNewComment(""); 
     } catch (error) {
       console.error("Yorum eklenirken hata:", error);
       alert("Yorum eklenemedi :(");
@@ -226,15 +230,15 @@ export default function DramaDetail() {
 
     setCommentLoading(true);
     try {
-      // Rozeti hesapla
-      const userBadge = await getUserBadgeAndUpdateOlds(user.uid);
+      // Çoklu rozetleri hesapla
+      const userBadges = await getUserBadgesAndUpdateOlds(user.uid);
 
       await addDoc(collection(db, "dramas", id as string, "comments"), {
         text: replyText,
         userId: user.uid,
         userName: user.displayName || "Anonim Kullanıcı",
         userPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'U'}&background=db2777&color=fff`,
-        badge: userBadge, // YENİ EKLENDİ: Rozeti Mühürle
+        badges: userBadges, // DİKKAT: badge yerine badges (array) kaydediyoruz
         createdAt: new Date(),
         parentId: parentId 
       });
@@ -250,7 +254,6 @@ export default function DramaDetail() {
   if (loading) return <div className="text-white text-center mt-20">Yükleniyor...</div>;
   if (!drama) return <div className="text-white text-center mt-20">Dizi bulunamadı :(</div>;
 
-  // Ruh hallerini şık yazılara çeviren sözlük
   const moodMap: { [key: string]: string } = {
     "cerezlik": "🍿 Çerezlik",
     "aglatanlar": "😭 Ağlatanlar",
@@ -289,14 +292,13 @@ export default function DramaDetail() {
             {/* KONTROL ÇUBUĞU */}
             <div className="mt-4 flex flex-wrap items-center gap-8 bg-black/40 backdrop-blur-md p-3 rounded-2xl w-fit shadow-2xl">
               
-              {/* Durum Seçici */}
               <div className="relative">
                 <select 
                   value={userStatus} 
                   onChange={(e) => setUserStatus(e.target.value)}
                   className="appearance-none bg-gray-800/80 hover:bg-gray-700 text-white text-sm font-semibold py-2.5 pl-4 pr-10 rounded-xl outline-none cursor-pointer transition-colors focus:ring-2 focus:ring-pink-500"
                 >
-                  <option value="Plan to Watch" className="bg-gray-900 text-white">📌 İzlenecekler</option>
+                  <option value="Plan to Watch" className="bg-gray-900 text-white">📌 İzlemeye Gidiyorum</option>
                   <option value="Watching" className="bg-gray-900 text-white">📺 İzliyorum</option>
                   <option value="Completed" className="bg-gray-900 text-white">✅ Bitti</option>
                   <option value="Dropped" className="bg-gray-900 text-white">❌ Bıraktım</option>
@@ -306,7 +308,6 @@ export default function DramaDetail() {
                 </div>
               </div>
 
-              {/* Puan Seçici */}
               <div className="relative">
                 <select 
                   value={userRating} 
@@ -323,18 +324,14 @@ export default function DramaDetail() {
                 </div>
               </div>
 
-              {/* Araya İnce Bir Çizgi */}
               {isAdded && <div className="w-px h-8 bg-white/20 hidden sm:block mx-1"></div>}
 
-              {/* Akıllı Butonlar (GÜNCELLENDİ) */}
               {isAdded ? (
                 <div className="flex items-center space-x-3">
-                  {/* Güncelle Butonu */}
                   <button onClick={handleSaveToList} disabled={btnLoading} className="bg-pink-600 hover:bg-pink-500 text-white px-8 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg hover:shadow-pink-500/30 flex items-center">
                     <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
                     Güncelle
                   </button>
-                  {/* Sil Butonu */}
                   <button onClick={handleRemoveFromList} disabled={btnLoading} className="bg-red-600 hover:bg-red-500 text-white px-8 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg flex items-center">
                     <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                     Sil
@@ -362,7 +359,6 @@ export default function DramaDetail() {
             </div>
           </section>
 
-          {/* DİZİDEN KARELER */}
           {(drama.screenshot1 || drama.screenshot2 || drama.screenshot3) && (
             <section className="py-4">
               <h2 className="text-xl font-bold text-gray-300 mb-4 flex items-center">
@@ -405,28 +401,23 @@ export default function DramaDetail() {
         {/* SAĞ TARAF: Künye ve Fragman */}
         <div className="space-y-6">
 
-          {/* DİZİ KÜNYESİ */}
           <div className="bg-gray-800 p-6 rounded-lg border border-gray-700 shadow-xl">
             <h3 className="text-xl font-bold mb-4 text-pink-500 border-b border-gray-700 pb-2">Dizi Künyesi</h3>
-            
             <div className="space-y-4 text-sm">
               <div>
                 <span className="text-gray-400 block mb-1">🎭 Tür</span>
                 <span className="font-semibold text-white capitalize">{drama.genre || "Belirtilmemiş"}</span>
               </div>
-              
               <div>
                 <span className="text-gray-400 block mb-1">✨ Ruh Hali</span>
                 <span className="font-semibold text-purple-400">
                   {drama.mood ? moodMap[drama.mood] : "Belirtilmemiş"}
                 </span>
               </div>
-
               <div>
                 <span className="text-gray-400 block mb-1">📺 Bölüm Sayısı</span>
                 <span className="font-semibold text-white">{drama.episodeCount || "Belirtilmemiş"}</span>
               </div>
-
               <div>
                 <span className="text-gray-400 block mb-1">👥 Oyuncular</span>
                 <span className="font-semibold text-gray-200 leading-relaxed block">
@@ -452,7 +443,6 @@ export default function DramaDetail() {
             İzleyici Yorumları <span className="text-pink-500 ml-1">({comments.length})</span>
           </h2>
 
-          {/* Yorum Yapma Formu */}
           {user ? (
             <form onSubmit={handleAddComment} className="mb-8 bg-gray-800 p-4 rounded-xl border border-gray-700 flex items-start gap-3">
               <img src={user.photoURL || `...`} alt="Profil" className="w-8 h-8 rounded-full object-cover border border-pink-500 mt-1" />
@@ -476,13 +466,12 @@ export default function DramaDetail() {
             </div>
           )}
 
-          {/* Yorumlar Listesi ve Cevaplar */}
           <div className="space-y-6">
             {comments.filter(c => !c.parentId).length === 0 ? (
               <p className="text-gray-500 text-center py-6 italic">Henüz yorum yapılmamış. İlk yorum yapan sen ol! 🎬</p>
             ) : (
               comments
-                .filter(c => !c.parentId) // Sadece ana yorumları (cevap olmayanları) listele
+                .filter(c => !c.parentId)
                 .map((comment) => (
                 <div key={comment.id} className="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-sm hover:border-gray-600 transition-colors">
                   
@@ -490,20 +479,25 @@ export default function DramaDetail() {
                   <div className="flex items-start gap-3">
                     <img src={comment.userPhoto} alt={comment.userName} className="w-8 h-8 rounded-full object-cover mt-1" />
                     <div className="flex-1">
-                      {/* ÜST BİLGİ ALANI (İsim + ROZET + Tarih) */}
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 gap-1 sm:gap-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                           <h4 className="font-bold text-pink-400">{comment.userName}</h4>
                           
-                          {/* ROZET RENDER ALANI */}
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border font-bold whitespace-nowrap ${
-                            comment.badge?.includes("VIP") ? "bg-purple-900/50 text-purple-300 border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)]" :
-                            comment.badge?.includes("Üstadı") ? "bg-yellow-900/50 text-yellow-300 border-yellow-500" :
-                            comment.badge?.includes("Kurdu") ? "bg-pink-900/50 text-pink-300 border-pink-500" :
-                            "bg-gray-700/50 text-gray-300 border-gray-600"
-                          }`}>
-                            {comment.badge || "🐣 Yeni İzleyici"}
-                          </span>
+                          {/* ÇOKLU ROZET RENDER ALANI */}
+                          <div className="flex flex-wrap gap-1">
+                            {(comment.badges || (comment.badge ? [comment.badge] : ["🐣 Hoş Geldin"])).map((badge: string, idx: number) => (
+                              <span key={idx} className={`text-[9px] px-1.5 py-0.5 rounded-full border font-bold whitespace-nowrap ${
+                                badge.includes("VIP") ? "bg-purple-900/50 text-purple-300 border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)]" :
+                                badge.includes("Üstadı") ? "bg-yellow-900/50 text-yellow-300 border-yellow-500" :
+                                badge.includes("Kurdu") ? "bg-pink-900/50 text-pink-300 border-pink-500" :
+                                badge.includes("Sosyal") ? "bg-blue-900/50 text-blue-300 border-blue-500" :
+                                badge.includes("Yıllık") ? "bg-green-900/50 text-green-300 border-green-500" :
+                                "bg-gray-700/50 text-gray-300 border-gray-600"
+                              }`}>
+                                {badge}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                         
                         <span className="text-xs text-gray-500">
@@ -512,7 +506,6 @@ export default function DramaDetail() {
                       </div>
                       <p className="text-gray-300 whitespace-pre-line leading-relaxed text-sm mb-2">{comment.text}</p>
                       
-                      {/* Cevapla Butonu */}
                       {user && (
                         <button 
                           onClick={() => {
@@ -527,7 +520,7 @@ export default function DramaDetail() {
                     </div>
                   </div>
 
-                  {/* CEVAP YAZMA KUTUSU (Sadece Cevapla butonuna basılınca açılır) */}
+                  {/* CEVAP YAZMA KUTUSU */}
                   {replyingTo === comment.id && (
                     <form onSubmit={(e) => handleAddReply(e, comment.id)} className="mt-4 ml-16 flex gap-3">
                       <input 
@@ -544,34 +537,40 @@ export default function DramaDetail() {
                     </form>
                   )}
 
-                  {/* ALT YORUMLAR / CEVAPLAR (Eskiden Yeniye Sıralı) */}
+                  {/* ALT YORUMLAR / CEVAPLAR */}
                   <div className="mt-4 ml-16 space-y-3">
                     {comments
                       .filter(c => c.parentId === comment.id)
-                      .reverse() // Cevaplar kronolojik olsun diye tersine çevirdik
+                      .reverse() 
                       .map(reply => (
                         <div key={reply.id} className="flex gap-3 bg-gray-900/50 p-3 rounded-lg border border-gray-700/50">
                           <img src={reply.userPhoto} alt={reply.userName} className="w-8 h-8 rounded-full object-cover" />
                           <div className="flex-1">
                             
-                            {/* CEVAP İÇİN ÜST BİLGİ ALANI (İsim + ROZET + Tarih) */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-1 gap-1 sm:gap-0">
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                                 <h5 className="font-bold text-sm text-purple-400">{reply.userName}</h5>
                                 
-                                {/* ROZET RENDER ALANI */}
-                                <span className={`text-[9px] px-1.5 py-0.5 rounded-full border font-bold whitespace-nowrap ${
-                                  reply.badge?.includes("VIP") ? "bg-purple-900/50 text-purple-300 border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)]" :
-                                  reply.badge?.includes("Üstadı") ? "bg-yellow-900/50 text-yellow-300 border-yellow-500" :
-                                  reply.badge?.includes("Kurdu") ? "bg-pink-900/50 text-pink-300 border-pink-500" :
-                                  "bg-gray-700/50 text-gray-300 border-gray-600"
-                                }`}>
-                                  {reply.badge || "🐣 Yeni İzleyici"}
-                                </span>
+                                {/* CEVAP İÇİN ÇOKLU ROZET RENDER ALANI */}
+                                <div className="flex flex-wrap gap-1">
+                                  {(reply.badges || (reply.badge ? [reply.badge] : ["🐣 Hoş Geldin"])).map((badge: string, idx: number) => (
+                                    <span key={idx} className={`text-[9px] px-1.5 py-0.5 rounded-full border font-bold whitespace-nowrap ${
+                                      badge.includes("VIP") ? "bg-purple-900/50 text-purple-300 border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.4)]" :
+                                      badge.includes("Üstadı") ? "bg-yellow-900/50 text-yellow-300 border-yellow-500" :
+                                      badge.includes("Kurdu") ? "bg-pink-900/50 text-pink-300 border-pink-500" :
+                                      badge.includes("Sosyal") ? "bg-blue-900/50 text-blue-300 border-blue-500" :
+                                      badge.includes("Yıllık") ? "bg-green-900/50 text-green-300 border-green-500" :
+                                      "bg-gray-700/50 text-gray-300 border-gray-600"
+                                    }`}>
+                                      {badge}
+                                    </span>
+                                  ))}
+                                </div>
                               </div>
                               
                               <span className="text-[10px] text-gray-500">
-                                {reply.createdAt?.toDate ? reply.createdAt.toDate().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : "Şimdi"}                              </span>
+                                {reply.createdAt?.toDate ? reply.createdAt.toDate().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) : "Şimdi"}
+                              </span>
                             </div>
                             
                             <p className="text-gray-300 text-sm">{reply.text}</p>
