@@ -2,6 +2,7 @@ import { db } from './firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import Hero from '@/components/Hero'; 
 import Link from 'next/link';
+import Newsletter from '@/components/Newsletter';
 
 async function getDramas() {
   const querySnapshot = await getDocs(collection(db, "dramas"));
@@ -170,6 +171,8 @@ export default async function Home() {
           </section>
         )}
 
+        {/* BÜLTEN ABONELİĞİ */}
+        <Newsletter />
       </div>
     </main>
   );

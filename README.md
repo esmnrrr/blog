@@ -28,7 +28,7 @@
 
 # reklamlar
 
-# Bildirim Sistemi (Newsletter): Kullanıcılar üye olurken "Yeni yazılardan haberdar ol" kutucuğunu işaretler. Sen yeni bir yazı girdiğinde, sistemdeki mail listesine otomatik mail gider. Bunu "Mailchimp" veya ücretsiz servislerle (SendGrid vb.) entegre edebilirsin.
+# +++ Bildirim Sistemi (Newsletter): Kullanıcılar üye olurken "Yeni yazılardan haberdar ol" kutucuğunu işaretler. Sen yeni bir yazı girdiğinde, sistemdeki mail listesine otomatik mail gider.
 
 # +++ Dizi Künyesi: Oyuncular, Bölüm Sayısı, Türü (Bilgi kutucuğu şeklinde) olusturmak 
 
@@ -53,3 +53,4 @@
 
 # telefon optimizasyonu
 
+# admin de diziyi kim giriyorsa ilk onun adi drama sayfasinda en altta ciksin
