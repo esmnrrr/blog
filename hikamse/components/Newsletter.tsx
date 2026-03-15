@@ -47,6 +47,12 @@ export default function Newsletter() {
         subscribedAt: new Date(),
       });
 
+      await fetch('/api/welcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
       setStatus("success");
       setStep("success");
       localStorage.setItem("newsletterSubscribed", "true"); // Bir daha asla sorma
