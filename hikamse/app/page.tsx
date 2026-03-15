@@ -41,7 +41,6 @@ export default async function Home() {
   });
 
   // --- KUSURSUZ VE SABİT KART TASARIMI ---
-  // flex-none, w-40, h-60 kodları sayesinde ASLA sündürme yapmaz, hepsi milimi milimine aynı boy olur!
   const DramaCard = ({ drama, rank, isComingSoon }: { drama: any, rank?: number, isComingSoon?: boolean }) => (
     <Link 
       href={`/drama/${drama.id}`} 
@@ -54,7 +53,6 @@ export default async function Home() {
         </span>
       )}
       
-      {/* Resim alanı da tamamen karta kilitlendi */}
       <div className="w-full h-full bg-gray-700 relative">
          {drama?.posterImage || drama?.backdropImage ? (
            <img src={drama.posterImage || drama.backdropImage} alt={drama?.title} className="w-full h-full object-cover" />
@@ -85,7 +83,6 @@ export default async function Home() {
   return (
     <main className="min-h-screen bg-gray-900 text-white pb-20 overflow-x-hidden">
       
-      {/* Çirkin Scrollbar'ı Gizleyen Büyülü CSS */}
       <style>{`
         .hide-scroll::-webkit-scrollbar { display: none; }
         .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
@@ -101,9 +98,8 @@ export default async function Home() {
           <section>
             <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-2">
               <span className="text-3xl">🆕</span>
-              <h2 className="text-2xl font-bold text-pink-500 tracking-wide">Son Eklenen İncelemeler</h2>
+              <h2 className="text-2xl font-bold text-pink-500 tracking-wide">Son Eklenenler</h2>
             </div>
-            {/* pt-4 ve pb-8 ekledik ki kartlar büyüyünce yukarıdan/aşağıdan kesilmesin */}
             <div className="flex overflow-x-auto gap-4 md:gap-6 pt-4 pb-8 snap-x snap-mandatory hide-scroll">
               {latestDramas.map((drama: any) => (
                 <DramaCard key={drama.id} drama={drama} />
@@ -112,13 +108,13 @@ export default async function Home() {
           </section>
         )}
 
-        {/* EDİTÖRÜN SEÇİMİ (Sabit Boyutlu Şık Kart) */}
+        {/* EDİTÖRÜN SEÇİMİ */}
         {editorPick && (
           <section>
             <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-2">
               <span className="text-3xl">💎</span>
               <h2 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500 tracking-wide">
-                Hikamse's Pick (Haftanın Favorisi)
+                Haftanın Favorisi
               </h2>
             </div>
             <Link href={`/drama/${editorPick?.id}`} className="group relative flex flex-col md:flex-row w-full bg-gray-800 rounded-2xl overflow-hidden shadow-2xl border border-gray-700 hover:border-purple-500 transition-all duration-300 min-h-[300px]">
@@ -149,7 +145,7 @@ export default async function Home() {
           <section>
             <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-2">
               <span className="text-3xl">🔥</span>
-              <h2 className="text-2xl font-bold text-yellow-500 tracking-wide">Top 10 Trend</h2>
+              <h2 className="text-2xl font-bold text-yellow-500 tracking-wide">Trendler</h2>
             </div>
             <div className="flex overflow-x-auto gap-4 md:gap-6 pt-4 pb-8 snap-x snap-mandatory hide-scroll">
               {trendingDramas.map((drama: any, idx: number) => (

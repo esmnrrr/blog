@@ -38,7 +38,7 @@
 
 # +++ search bar, fuzzy search algo 
 
-# "Son Eklenenlerin Altı": 
+# +++ "Son Eklenenlerin Altı": 
 # "Editörün Seçimi (Hikamse's Pick):" Senin o hafta bayıldığın dizi.
 # "Top 10 Trend:" O hafta en çok tıklanan veya yorum alan diziler.
 # "Yakında Gelecekler:" Henüz yayınlanmamış ama heyecanla beklenenler.
