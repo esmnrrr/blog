@@ -22,14 +22,14 @@ async function getDramas() {
 export default async function Home() {
   const dramas: any[] = await getDramas();
 
-  // 1. EDİTÖRÜN SEÇİMİ (Firebase'de isEditorPick varsa o, yoksa en yüksek puanlı)
+  // 1. EDİTÖRÜN SEÇİMİ 
   const editorPick: any = dramas.find((d: any) => d.isEditorPick) || 
     [...dramas].sort((a: any, b: any) => parseFloat(b.ratingAvg || "0") - parseFloat(a.ratingAvg || "0"))[0];
 
-  // 2. SON EKLENENLER (En yeni 10 dizi)
+  // 2. SON EKLENENLER 
   const latestDramas = dramas.slice(0, 10);
 
-  // 3. TOP 10 TREND (En yüksek puanlı ilk 10)
+  // 3. TOP 10 TREND 
   const trendingDramas = [...dramas]
     .sort((a: any, b: any) => parseFloat(b.ratingAvg || "0") - parseFloat(a.ratingAvg || "0"))
     .slice(0, 10);
@@ -40,11 +40,12 @@ export default async function Home() {
     return yearStr.toLowerCase().includes('yakında') || parseInt(yearStr) > 2026;
   });
 
-  // --- ORTAK KART TASARIMI --- (Tüm kaydırmalı listeler bu şık kartı kullanacak)
+  // --- KUSURSUZ VE SABİT KART TASARIMI ---
+  // flex-none, w-40, h-60 kodları sayesinde ASLA sündürme yapmaz, hepsi milimi milimine aynı boy olur!
   const DramaCard = ({ drama, rank, isComingSoon }: { drama: any, rank?: number, isComingSoon?: boolean }) => (
     <Link 
       href={`/drama/${drama.id}`} 
-      className="snap-start group block relative bg-gray-800 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg cursor-pointer min-w-[160px] md:min-w-[200px] shrink-0 border border-gray-700 hover:border-pink-500"
+      className="flex-none w-40 h-60 md:w-48 md:h-72 snap-start group block relative bg-gray-800 rounded-xl overflow-hidden hover:scale-105 hover:z-10 transition-all duration-300 shadow-lg cursor-pointer border border-gray-700 hover:border-pink-500"
     >
       {/* Sıralama Numarası (Sadece Top 10 için) */}
       {rank && (
@@ -53,27 +54,29 @@ export default async function Home() {
         </span>
       )}
       
-      <div className="aspect-[2/3] w-full bg-gray-700 relative">
+      {/* Resim alanı da tamamen karta kilitlendi */}
+      <div className="w-full h-full bg-gray-700 relative">
          {drama?.posterImage || drama?.backdropImage ? (
            <img src={drama.posterImage || drama.backdropImage} alt={drama?.title} className="w-full h-full object-cover" />
          ) : (
-           <div className="flex items-center justify-center h-full text-gray-500">Görsel Yok</div>
+           <div className="flex items-center justify-center h-full text-gray-500 text-sm">Görsel Yok</div>
          )}
-         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-90" />
+         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
          
          {/* Yakında Etiketi */}
          {isComingSoon && (
-           <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition flex items-center justify-center">
-              <span className="bg-blue-600/80 text-white px-3 py-1 rounded-full font-bold text-sm backdrop-blur-md">Yakında</span>
+           <div className="absolute inset-0 bg-black/50 group-hover:bg-black/30 transition flex items-center justify-center">
+              <span className="bg-blue-600/90 text-white px-4 py-1.5 rounded-full font-bold text-sm backdrop-blur-md shadow-lg border border-blue-400">Yakında</span>
            </div>
          )}
       </div>
       
-      <div className="absolute bottom-0 w-full p-4 transform translate-y-1 group-hover:translate-y-0 transition-transform">
+      {/* Kartın Altındaki Yazılar */}
+      <div className="absolute bottom-0 left-0 w-full p-4 transform translate-y-1 group-hover:translate-y-0 transition-transform">
         <h3 className="font-bold text-sm md:text-base text-white truncate drop-shadow-md">{drama?.title}</h3>
-        <div className="flex justify-between text-xs text-gray-300 mt-1">
-          <span>{isComingSoon ? (drama?.genre || "Dizi") : drama?.releaseYear}</span>
-          {!isComingSoon && <span className="text-yellow-400 font-bold">★ {drama?.ratingAvg}</span>}
+        <div className="flex justify-between items-center text-xs text-gray-300 mt-1">
+          <span className="truncate mr-2">{isComingSoon ? (drama?.genre || "Dizi") : drama?.releaseYear}</span>
+          {!isComingSoon && <span className="text-yellow-400 font-bold shrink-0">★ {drama?.ratingAvg}</span>}
         </div>
       </div>
     </Link>
@@ -93,14 +96,15 @@ export default async function Home() {
 
       <div className="container mx-auto px-6 md:px-12 mt-12 space-y-12">
         
-        {/* SON EKLENENLER (Artık Kaydırmalı!) */}
+        {/* SON EKLENENLER */}
         {latestDramas.length > 0 && (
           <section>
             <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-2">
               <span className="text-3xl">🆕</span>
               <h2 className="text-2xl font-bold text-pink-500 tracking-wide">Son Eklenen İncelemeler</h2>
             </div>
-            <div className="flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory hide-scroll">
+            {/* pt-4 ve pb-8 ekledik ki kartlar büyüyünce yukarıdan/aşağıdan kesilmesin */}
+            <div className="flex overflow-x-auto gap-4 md:gap-6 pt-4 pb-8 snap-x snap-mandatory hide-scroll">
               {latestDramas.map((drama: any) => (
                 <DramaCard key={drama.id} drama={drama} />
               ))}
@@ -108,7 +112,7 @@ export default async function Home() {
           </section>
         )}
 
-        {/* EDİTÖRÜN SEÇİMİ (Devasa Özel Kart) */}
+        {/* EDİTÖRÜN SEÇİMİ (Sabit Boyutlu Şık Kart) */}
         {editorPick && (
           <section>
             <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-2">
@@ -117,12 +121,12 @@ export default async function Home() {
                 Hikamse's Pick (Haftanın Favorisi)
               </h2>
             </div>
-            <Link href={`/drama/${editorPick?.id}`} className="group relative flex flex-col md:flex-row w-full bg-gray-800 rounded-2xl overflow-hidden shadow-2xl border border-gray-700 hover:border-purple-500 transition-all duration-300">
-              <div className="w-full md:w-1/3 aspect-[4/3] md:aspect-auto relative bg-gray-700">
+            <Link href={`/drama/${editorPick?.id}`} className="group relative flex flex-col md:flex-row w-full bg-gray-800 rounded-2xl overflow-hidden shadow-2xl border border-gray-700 hover:border-purple-500 transition-all duration-300 min-h-[300px]">
+              <div className="w-full md:w-5/12 h-64 md:h-auto relative bg-gray-700 shrink-0">
                 <img src={editorPick?.posterImage || editorPick?.backdropImage} alt={editorPick?.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                 <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-gray-900 to-transparent" />
               </div>
-              <div className="w-full md:w-2/3 p-6 md:p-10 flex flex-col justify-center relative z-10">
+              <div className="w-full md:w-7/12 p-6 md:p-10 flex flex-col justify-center relative z-10">
                 <h3 className="text-3xl md:text-4xl font-black mb-2 text-white">{editorPick?.title}</h3>
                 <div className="flex gap-4 items-center mb-4">
                   <span className="text-yellow-400 font-bold bg-black/30 px-2 py-1 rounded">⭐ {editorPick?.ratingAvg}</span>
@@ -132,7 +136,7 @@ export default async function Home() {
                 <p className="text-gray-300 line-clamp-3 mb-6 leading-relaxed">
                   {editorPick?.reviewIntro || "Editörümüzün bu haftaki favori dizisi! Hemen tıkla ve incelemeyi oku."}
                 </p>
-                <div className="inline-block bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-lg font-bold transition w-max">
+                <div className="inline-block bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-lg font-bold transition w-max shadow-lg shadow-purple-500/20">
                   Diziyi İncele
                 </div>
               </div>
@@ -140,14 +144,14 @@ export default async function Home() {
           </section>
         )}
 
-        {/* TOP 10 TREND (Kaydırmalı) */}
+        {/* TOP 10 TREND */}
         {trendingDramas.length > 0 && (
           <section>
             <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-2">
               <span className="text-3xl">🔥</span>
               <h2 className="text-2xl font-bold text-yellow-500 tracking-wide">Top 10 Trend</h2>
             </div>
-            <div className="flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory hide-scroll">
+            <div className="flex overflow-x-auto gap-4 md:gap-6 pt-4 pb-8 snap-x snap-mandatory hide-scroll">
               {trendingDramas.map((drama: any, idx: number) => (
                 <DramaCard key={drama.id} drama={drama} rank={idx + 1} />
               ))}
@@ -155,14 +159,14 @@ export default async function Home() {
           </section>
         )}
 
-        {/* YAKINDA GELECEKLER (Kaydırmalı) */}
+        {/* YAKINDA GELECEKLER */}
         {comingSoonDramas.length > 0 && (
           <section>
             <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-2">
               <span className="text-3xl">⏳</span>
               <h2 className="text-2xl font-bold text-blue-400 tracking-wide">Yakında Gelecekler</h2>
             </div>
-            <div className="flex overflow-x-auto gap-6 pb-6 snap-x snap-mandatory hide-scroll">
+            <div className="flex overflow-x-auto gap-4 md:gap-6 pt-4 pb-8 snap-x snap-mandatory hide-scroll">
               {comingSoonDramas.map((drama: any) => (
                 <DramaCard key={drama.id} drama={drama} isComingSoon={true} />
               ))}
