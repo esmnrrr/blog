@@ -74,13 +74,30 @@ export default function AdminPanel() {
     setSubmitLoading(true);
 
     try {
-      // Firebase "dramas" koleksiyonuna yeni belge ekle
-      await addDoc(collection(db, "dramas"), {
+      // 1. Önce Firebase "dramas" koleksiyonuna yeni belge ekle (Burada 'docRef' ile ID'sini yakalıyoruz)
+      const docRef = await addDoc(collection(db, "dramas"), {
         ...formData,
         createdAt: new Date(),
       });
       
-      alert("Dizi başarıyla eklendi! 🎉 Ana sayfaya düşmüştür.");
+      // 2. YENİ: Dizi başarıyla eklendi, şimdi abonelere mail at!
+      try {
+        await fetch('/api/new-drama-alert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: docRef.id,
+            title: formData.title,
+            posterImage: formData.posterImage,
+            reviewIntro: formData.reviewIntro
+          })
+        });
+      } catch (mailError) {
+        console.error("Mail atarken hata oluştu:", mailError);
+        // Mail gitmese bile dizi eklendiği için süreci durdurmuyoruz.
+      }
+
+      alert("Dizi başarıyla eklendi! 🎉 Ana sayfaya düşmüştür ve abonelere mail fırlatılmıştır!");
       
       // Eklendikten sonra formu tertemiz yap
       setFormData({

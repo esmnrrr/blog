@@ -23,7 +23,7 @@ export async function POST(request: Request) {
             Artık en yeni incelemeler, gizli kalmış şaheserler ve "Haftanın Favorisi" seçtiğimiz diziler ilk senin e-posta kutuna düşecek.
           </p>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://blog-rho-nine-34.vercel.app/" style="background-color: #db2777; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Sitelere Göz At</a>
+            <a href="https://blog-rho-nine-34.vercel.app/" style="background-color: #db2777; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Dizilere Göz At</a>
           </div>
           <p style="font-size: 16px; color: #d1d5db; line-height: 1.6;">
             Şimdiden keyifli okumalar!<br>
