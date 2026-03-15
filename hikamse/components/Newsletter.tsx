@@ -1,11 +1,31 @@
 "use client";
-import { useState } from "react";
-import { db } from "@/app/firebase"; // Kendi firebase dosya yoluna göre ayarla (örn: '../firebase' olabilir)
+import { useState, useEffect } from "react";
+import { db } from "@/app/firebase";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 
 export default function Newsletter() {
+  const [isVisible, setIsVisible] = useState(false);
+  const [step, setStep] = useState<"initial" | "input" | "success">("initial");
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState("idle"); // idle, loading, success, error, exists
+  const [status, setStatus] = useState("idle");
+
+  useEffect(() => {
+    // Kullanıcı daha önce "Daha sonra" dediyse veya abone olduysa popup'ı hiç gösterme
+    const isDismissed = localStorage.getItem("newsletterDismissed");
+    const isSubscribed = localStorage.getItem("newsletterSubscribed");
+
+    if (!isDismissed && !isSubscribed) {
+      // Sayfa açıldıktan 3 saniye sonra zarifçe ekrana gelsin
+      const timer = setTimeout(() => setIsVisible(true), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleDismiss = () => {
+    setIsVisible(false);
+    // 3 gün boyunca tekrar gösterme (örnek olarak)
+    localStorage.setItem("newsletterDismissed", "true"); 
+  };
 
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,7 +34,6 @@ export default function Newsletter() {
     setStatus("loading");
 
     try {
-      // 1. Önce bu mail veritabanında var mı diye kontrol edelim (Spam engelleme)
       const q = query(collection(db, "subscribers"), where("email", "==", email));
       const querySnapshot = await getDocs(q);
 
@@ -23,61 +42,107 @@ export default function Newsletter() {
         return;
       }
 
-      // 2. Mail yoksa yeni abone olarak Firebase'e ekleyelim
       await addDoc(collection(db, "subscribers"), {
         email: email,
         subscribedAt: new Date(),
       });
 
       setStatus("success");
-      setEmail(""); // Kutucuğu temizle
+      setStep("success");
+      localStorage.setItem("newsletterSubscribed", "true"); // Bir daha asla sorma
 
-      // 3 saniye sonra mesajı gizle
-      setTimeout(() => setStatus("idle"), 3000);
+      // 3 saniye tebrik mesajını göster, sonra popup'ı tamamen kapat
+      setTimeout(() => {
+        setIsVisible(false);
+      }, 3000);
+
     } catch (error) {
       console.error("Abonelik hatası:", error);
       setStatus("error");
     }
   };
 
+  if (!isVisible) return null;
+
   return (
-    <section className="w-full py-16 mt-12 border-t border-gray-800 bg-gradient-to-b from-gray-900 to-black relative overflow-hidden">
-      {/* Arka plan süslemeleri */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-pink-600/10 blur-[120px] rounded-full pointer-events-none" />
+    // Ekranın sol altına sabitlenmiş şık bildirim kutusu
+    <div className="fixed bottom-6 left-6 z-[9999] w-full max-w-[380px] p-5 rounded-2xl shadow-2xl bg-gradient-to-br from-[#a88beb] to-[#f8ceec] border border-white/20 animate-fade-in-up">
+      <div className="flex items-start gap-4">
+        
+        {/* Çan İkonu */}
+        <div className="shrink-0 bg-white/30 p-2.5 rounded-xl backdrop-blur-md">
+          <svg className="w-7 h-7 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+        </div>
 
-      <div className="max-w-4xl mx-auto px-6 relative z-10 text-center">
-        <h2 className="text-3xl md:text-4xl font-black text-white mb-4 tracking-tight">
-          Yeni İncelemeleri Kaçırma! 🍿
-        </h2>
-        <p className="text-gray-400 text-sm md:text-base mb-8 max-w-xl mx-auto">
-          Haftanın favori dizileri, en taze incelemeler ve sürpriz öneriler doğrudan e-posta kutuna gelsin. Spam yok, sadece kaliteli dizi muhabbeti.
-        </p>
+        {/* İçerik */}
+        <div className="flex-1">
+          {step === "initial" && (
+            <>
+              <h3 className="text-[15px] font-black text-gray-900 mb-1 leading-tight drop-shadow-sm">
+                Dünyanın dizisi, Hikamse'de 🔥
+              </h3>
+              <p className="text-[13px] text-gray-800 font-medium mb-4 leading-snug">
+                Ücretsiz dizi keyfin devam etsin diye güncellemeleri kaçırma!
+              </p>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={handleDismiss}
+                  className="flex-1 bg-white hover:bg-gray-100 text-gray-900 text-xs font-bold py-2 px-4 rounded-lg transition-colors shadow-sm"
+                >
+                  Daha sonra
+                </button>
+                <button 
+                  onClick={() => setStep("input")}
+                  className="flex-1 bg-gray-900 hover:bg-black text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors shadow-sm"
+                >
+                  Kaydol
+                </button>
+              </div>
+            </>
+          )}
 
-        <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-lg mx-auto">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="E-posta adresin..."
-            required
-            className="w-full sm:w-2/3 px-5 py-3 rounded-full bg-gray-800 border border-gray-700 text-white focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/50 transition"
-          />
-          <button
-            type="submit"
-            disabled={status === "loading"}
-            className="w-full sm:w-auto px-8 py-3 rounded-full bg-pink-600 hover:bg-pink-500 text-white font-bold transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-pink-600/30"
-          >
-            {status === "loading" ? "Ekleniyor..." : "Abone Ol"}
-          </button>
-        </form>
+          {step === "input" && (
+            <form onSubmit={handleSubscribe} className="flex flex-col gap-2 animate-fade-in">
+              <h3 className="text-[14px] font-black text-gray-900 mb-1">E-posta Adresin:</h3>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="ornek@mail.com"
+                required
+                className="w-full text-sm px-3 py-2 rounded-lg bg-white/70 border border-white/50 text-gray-900 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-900"
+              />
+              <div className="flex items-center gap-2 mt-1">
+                <button 
+                  type="button"
+                  onClick={() => setStep("initial")}
+                  className="text-gray-800 text-xs font-bold hover:underline px-2"
+                >
+                  İptal
+                </button>
+                <button 
+                  type="submit"
+                  disabled={status === "loading"}
+                  className="flex-1 bg-gray-900 hover:bg-black text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {status === "loading" ? "Bekleniyor..." : "Abone Ol"}
+                </button>
+              </div>
+              {status === "exists" && <p className="text-red-600 text-[11px] font-bold mt-1">Bu e-posta zaten kayıtlı!</p>}
+              {status === "error" && <p className="text-red-600 text-[11px] font-bold mt-1">Bir hata oluştu!</p>}
+            </form>
+          )}
 
-        {/* Durum Mesajları */}
-        <div className="mt-4 h-6 text-sm font-medium">
-          {status === "success" && <p className="text-green-400">🎉 Harika! Bültene başarıyla abone oldun.</p>}
-          {status === "exists" && <p className="text-yellow-400">😅 Bu e-posta adresi zaten bültenimize kayıtlı.</p>}
-          {status === "error" && <p className="text-red-400">❌ Bir hata oluştu, lütfen tekrar dene.</p>}
+          {step === "success" && (
+            <div className="flex flex-col items-center justify-center py-2 animate-fade-in">
+              <span className="text-2xl mb-1">🎉</span>
+              <p className="text-[14px] font-black text-gray-900 text-center">Aramıza Hoş Geldin!</p>
+            </div>
+          )}
         </div>
       </div>
-    </section>
+    </div>
   );
 }
