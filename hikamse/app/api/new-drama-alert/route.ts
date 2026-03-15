@@ -21,8 +21,9 @@ export async function POST(request: Request) {
     // 2. Toplu Maili Gönder (Gizlilik için 'bcc' kullanıyoruz, böylece kimse diğerinin mailini görmez)
     const data = await resend.emails.send({
       from: 'Hikamse <onboarding@resend.dev>', // İleride kendi domainini ekleyince değiştirebilirsin
-      to: ['delivered@resend.dev'], // Resend zorunlu tuttuğu için ana alıcıyı gizli tutuyoruz
-      bcc: emails, // Bütün aboneleri "Gizli Kopya" kısmına ekliyoruz
+      to: emails,
+      //to: ['delivered@resend.dev'], // Resend zorunlu tuttuğu için ana alıcıyı gizli tutuyoruz
+      //bcc: emails, // Bütün aboneleri "Gizli Kopya" kısmına ekliyoruz
       subject: `🚨 Yeni Dizi Eklendi: ${drama.title}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #111827; color: #ffffff; border-radius: 12px; border: 1px solid #374151;">
@@ -36,7 +37,7 @@ export async function POST(request: Request) {
           </p>
           
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://seninsiten.vercel.app/drama/${drama.id}" style="background-color: #db2777; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">İncelemeyi Oku ➔</a>
+            <a href="https://blog-rho-nine-34.vercel.app/drama/${drama.id}" style="background-color: #db2777; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">İncelemeyi Oku ➔</a>
           </div>
         </div>
       `
