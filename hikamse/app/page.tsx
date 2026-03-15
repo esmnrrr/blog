@@ -3,6 +3,8 @@ import { collection, getDocs } from 'firebase/firestore';
 import Hero from '@/components/Hero'; 
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 async function getDramas() {
   const querySnapshot = await getDocs(collection(db, "dramas"));
   
