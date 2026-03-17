@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { auth, db } from "@/app/firebase";
 import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
 import Fuse from "fuse.js";
-import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile} from "firebase/auth";
 
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
@@ -16,6 +16,14 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [allDramas, setAllDramas] = useState<any[]>([]);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // E-POSTA GİRİŞ/KAYIT SİSTEMİ İÇİN HAFIZALAR
+  const [authModalAcik, setAuthModalAcik] = useState(false);
+  const [isLogin, setIsLogin] = useState(true); // true = Giriş Ekranı, false = Kayıt Ekranı
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -83,6 +91,48 @@ export default function Navbar() {
     } catch (error) {
       console.error("Giriş hatası:", error);
     }
+  };
+
+  // E-POSTA İLE KAYIT OL & GİRİŞ YAP MOTORU
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    try {
+      if (isLogin) {
+        // GİRİŞ YAPILIYOR
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        // YENİ HESAP AÇILIYOR
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const newUser = userCredential.user;
+        
+        // İsmini profile kaydet
+        await updateProfile(newUser, { displayName: name });
+        
+        // Veritabanında (users) bu kullanıcıya dosya aç
+        await setDoc(doc(db, "users", newUser.uid), {
+          uid: newUser.uid,
+          email: newUser.email,
+          displayName: name,
+          photoURL: "", // Avatarı şimdilik boş, UI-Avatars otomatik harf çizecek
+          role: "user",
+          createdAt: new Date()
+        });
+      }
+      
+      // İşlem başarılıysa pencereyi kapat ve kutuları temizle
+      setAuthModalAcik(false); 
+      setEmail(""); setPassword(""); setName("");
+    } catch (error: any) {
+      console.error("Yetkilendirme hatası:", error);
+      alert(
+        error.message.includes("email-already-in-use") ? "Bu mail zaten kayıtlı! Giriş yapmayı dene." : 
+        error.message.includes("wrong-password") || error.message.includes("invalid-credential") ? "E-posta veya şifre hatalı!" : 
+        error.message.includes("weak-password") ? "Şifre en az 6 karakter olmalı!" : 
+        "Bir hata oluştu. Lütfen tekrar dene."
+      );
+    }
+    setAuthLoading(false);
   };
 
   const handleLogout = async () => {
@@ -212,7 +262,7 @@ export default function Navbar() {
             </div>
           ) : (
             <button
-              onClick={handleGoogleLogin}
+              onClick={() => setAuthModalAcik(true)}
               className="px-5 py-2 bg-pink-600 hover:bg-pink-700 rounded-full text-sm font-bold shadow-lg transition"
             >
               Giriş Yap
@@ -260,6 +310,65 @@ export default function Navbar() {
               <Link href="/ruh-hali/tirnak-yedirten" className="text-gray-300 hover:text-purple-400 hover:-translate-y-1 transition-transform flex items-center gap-2"><span>💅</span><span>Tırnak Yedirten</span></Link>
               <Link href="/ruh-hali/ilham-veren" className="text-gray-300 hover:text-purple-400 hover:-translate-y-1 transition-transform flex items-center gap-2"><span>✨</span><span>İlham Veren</span></Link>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- GİRİŞ / KAYIT OL PENCERESİ (MODAL) --- */}
+      {authModalAcik && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[99999] flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-pink-500/30 p-8 rounded-3xl shadow-2xl w-full max-w-md relative animate-fade-in-up">
+            
+            {/* Kapat Butonu */}
+            <button onClick={() => setAuthModalAcik(false)} className="absolute top-5 right-5 text-gray-400 hover:text-pink-500 transition-colors">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <h2 className="text-3xl font-black text-center text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 mb-6">
+              {isLogin ? "Tekrar Hoş Geldin!" : "Aramıza Katıl!"}
+            </h2>
+            
+            {/* E-Posta Formu */}
+            <form onSubmit={handleEmailAuth} className="space-y-4">
+              {!isLogin && (
+                <div>
+                  <label className="block text-sm font-bold text-gray-400 mb-1 pl-1">Kullanıcı Adı</label>
+                  <input required type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-pink-500 transition-colors" placeholder="Örn: KDramaQueen" />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-bold text-gray-400 mb-1 pl-1">E-Posta</label>
+                <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-pink-500 transition-colors" placeholder="ornek@mail.com" />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-400 mb-1 pl-1">Şifre</label>
+                <input required type="password" value={password} onChange={(e) => setPassword(e.target.value)} minLength={6} className="w-full bg-gray-800 border border-gray-700 rounded-xl p-3 text-white outline-none focus:border-pink-500 transition-colors" placeholder="En az 6 karakter" />
+              </div>
+              <button type="submit" disabled={authLoading} className="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg hover:shadow-pink-500/40 mt-2">
+                {authLoading ? "Bekleyin..." : (isLogin ? "Giriş Yap" : "Kayıt Ol")}
+              </button>
+            </form>
+
+            <div className="mt-6 flex items-center justify-between text-gray-500 text-sm">
+              <hr className="w-full border-gray-700" />
+              <span className="px-3 font-bold uppercase tracking-wider text-xs">Veya</span>
+              <hr className="w-full border-gray-700" />
+            </div>
+
+            {/* Google Butonu */}
+            <button onClick={() => { handleGoogleLogin(); setAuthModalAcik(false); }} type="button" className="mt-6 w-full bg-white text-gray-900 font-extrabold py-3.5 rounded-xl flex items-center justify-center gap-3 hover:bg-gray-200 transition-colors shadow-md">
+              <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>
+              Google ile Devam Et
+            </button>
+
+            {/* Geçiş Linki */}
+            <p className="mt-6 text-center text-sm text-gray-400">
+              {isLogin ? "Hesabın yok mu?" : "Zaten hesabın var mı?"}{" "}
+              <button onClick={() => { setIsLogin(!isLogin); setEmail(""); setPassword(""); }} className="text-pink-500 font-bold hover:underline">
+                {isLogin ? "Hemen Kayıt Ol" : "Giriş Yap"}
+              </button>
+            </p>
+
           </div>
         </div>
       )}
