@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc } from 'firebase/firestore';
 import Hero from '@/components/Hero'; 
 import Link from 'next/link';
 
@@ -21,8 +21,21 @@ async function getDramas() {
   return dramasData;
 }
 
+async function getQuote() {
+  try {
+    const docRef = doc(db, "settings", "homepage");
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? docSnap.data() : null;
+  } catch (error) {
+    // Firebase yetki vermezse veya dosya yoksa siteyi çökertme, boş dön!
+    console.error("Söz çekilirken güvenlik duvarına takıldı:", error);
+    return null; 
+  }
+}
+
 export default async function Home() {
   const dramas: any[] = await getDramas();
+  const quote = await getQuote();
 
   // 1. EDİTÖRÜN SEÇİMİ 
   const editorPick: any = dramas.find((d: any) => d.isEditorPick) || 
@@ -92,6 +105,26 @@ export default async function Home() {
 
       {/* HERO SECTION */}
       <Hero dramas={dramas.slice(0, 5)} />
+
+      {/* HAFTANIN SÖZÜ ŞERİDİ */}
+      {quote && quote.quoteText && (
+        <section className="relative overflow-hidden bg-gradient-to-r from-gray-900 via-purple-900/40 to-gray-900 border-y border-purple-500/20 py-12 md:py-16 my-8">
+          <div className="absolute top-0 left-4 text-9xl text-purple-500/10 font-serif leading-none select-none">"</div>
+          <div className="absolute bottom-0 right-4 text-9xl text-purple-500/10 font-serif leading-none select-none transform rotate-180">"</div>
+          
+          <div className="container mx-auto px-6 md:px-12 relative z-10 flex flex-col items-center text-center">
+            <span className="text-purple-400 font-bold uppercase tracking-widest text-xs md:text-sm mb-4 bg-purple-900/30 px-3 py-1 rounded-full border border-purple-500/30">Haftanın Repliği</span>
+            <p className="text-xl md:text-3xl font-light italic text-gray-200 max-w-4xl leading-relaxed mb-6">
+              "{quote.quoteText}"
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-[1px] bg-pink-500/50"></div>
+              <span className="text-pink-400 font-bold text-sm md:text-base drop-shadow-md">— {quote.quoteAuthor}</span>
+              <div className="w-8 h-[1px] bg-pink-500/50"></div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <div className="container mx-auto px-6 md:px-12 mt-12 space-y-12">
         

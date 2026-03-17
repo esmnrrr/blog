@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { db, auth } from "@/app/firebase";
-import { collection, addDoc, doc, getDoc } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc, setDoc} from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 
@@ -9,6 +9,8 @@ export default function AdminPanel() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [quoteData, setQuoteData] = useState({ text: "", author: "" });
+  const [quoteLoading, setQuoteLoading] = useState(false);
   const router = useRouter();
 
   // Dizi Ekleme Formunun Hafızası
@@ -66,6 +68,26 @@ export default function AdminPanel() {
   // Kutulara yazı yazıldıkça hafızayı güncelleyen fonksiyon
   const handleChange = (e: any) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // HAFTANIN SÖZÜ
+  const handleQuoteSubmit = async (e: any) => {
+    e.preventDefault();
+    setQuoteLoading(true);
+    try {
+      await setDoc(doc(db, "settings", "homepage"), {
+        quoteText: quoteData.text,
+        quoteAuthor: quoteData.author,
+        updatedAt: new Date()
+      }, { merge: true }); // Varsa üstüne yazar, yoksa yeni oluşturur
+      
+      alert("Haftanın Sözü başarıyla ana ekrana asıldı! 🌟");
+      setQuoteData({ text: "", author: "" });
+    } catch (error) {
+      console.error("Söz ekleme hatası:", error);
+      alert("Bir hata oluştu :(");
+    }
+    setQuoteLoading(false);
   };
 
   // 2. KAYDET BUTONUNA BASILINCA ÇALIŞACAK SİHİR
@@ -136,6 +158,21 @@ export default function AdminPanel() {
             Yetkili: {user.displayName}
           </div>
         </div>
+
+        {/* HAFTANIN SÖZÜ DÜZENLEME FORMU (YENİ) */}
+        <form onSubmit={handleQuoteSubmit} className="bg-gray-800/50 backdrop-blur-md p-6 rounded-2xl border border-purple-500/50 shadow-2xl mb-8 flex flex-col md:flex-row gap-4 items-end">
+          <div className="flex-1 w-full">
+            <label className="block text-sm font-bold text-purple-400 mb-2">Haftanın Sözü ✨</label>
+            <input required type="text" value={quoteData.text} onChange={(e) => setQuoteData({...quoteData, text: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-purple-500 outline-none transition" placeholder="Örn: Kendini haklı çıkarmaya çalışmak..." />
+          </div>
+          <div className="w-full md:w-1/3">
+            <label className="block text-sm font-bold text-purple-400 mb-2">Kimin Sözü? (Karakter)</label>
+            <input required type="text" value={quoteData.author} onChange={(e) => setQuoteData({...quoteData, author: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-purple-500 outline-none transition" placeholder="Örn: Vincenzo Cassano" />
+          </div>
+          <button type="submit" disabled={quoteLoading} className="w-full md:w-auto bg-purple-600 hover:bg-purple-500 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-lg hover:shadow-purple-500/40 disabled:opacity-50 h-[50px]">
+            {quoteLoading ? "⏳" : "Ana Ekrana As!"}
+          </button>
+        </form>
 
         {/* Ekleme Formu */}
         <form onSubmit={handleSubmit} className="bg-gray-800/50 backdrop-blur-md p-8 rounded-2xl border border-gray-700 shadow-2xl space-y-6">

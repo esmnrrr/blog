@@ -49,8 +49,6 @@
 
 # +++ izlenecekler in adini izlemeye gidiyorum yapacagim, rozetler de 1-10 arasi hosgeldin rozeti diye adi degisecej, sure bazinda da 1 yillik, 2 yillik rozetleri ayrica da sosyal medya dan takip edenlere ozel bir rozet de verilecek. Yan yana yorum rozeti, yil rozeti ve sosyal medya rozeti gorunebilecek. Rozetler profil sayfasinda da gorunecek
 
-# vip dizi eklediginde ana sayfa da cikmiyor 
-
 # telefon optimizasyonu
 
 # +++ admin de diziyi kim giriyorsa ilk onun adi drama sayfasinda en altta ciksin
