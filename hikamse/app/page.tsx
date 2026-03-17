@@ -108,22 +108,34 @@ export default async function Home() {
 
       {/* HAFTANIN SÖZÜ ŞERİDİ */}
       {quote && quote.quoteText && (
-        <section className="relative overflow-hidden bg-gradient-to-r from-gray-900 via-purple-900/40 to-gray-900 border-y border-purple-500/20 py-12 md:py-16 my-8">
-          <div className="absolute top-0 left-4 text-9xl text-purple-500/10 font-serif leading-none select-none">"</div>
-          <div className="absolute bottom-0 right-4 text-9xl text-purple-500/10 font-serif leading-none select-none transform rotate-180">"</div>
-          
-          <div className="container mx-auto px-6 md:px-12 relative z-10 flex flex-col items-center text-center">
-            <span className="text-purple-400 font-bold uppercase tracking-widest text-xs md:text-sm mb-4 bg-purple-900/30 px-3 py-1 rounded-full border border-purple-500/30">Haftanın Repliği</span>
-            <p className="text-xl md:text-3xl font-light italic text-gray-200 max-w-4xl leading-relaxed mb-6">
+        <div className="container mx-auto px-4 md:px-12 mt-8 mb-2">
+          <div className="bg-gradient-to-r from-gray-800 to-gray-900 border border-purple-500/30 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row items-center gap-4 md:gap-6 relative overflow-hidden group hover:border-purple-500/60 transition-colors">
+            
+            {/* Dekoratif Tırnak */}
+            <div className="absolute -left-2 -top-4 text-8xl text-purple-500/10 font-serif select-none pointer-events-none">"</div>
+
+            {/* Sol/Üst Kısım: Rozet */}
+            <div className="shrink-0 z-10">
+              <span className="bg-purple-900/40 text-purple-400 border border-purple-500/30 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                <span className="text-sm">✨</span> Haftanın Repliği
+              </span>
+            </div>
+
+            {/* Orta: Söz */}
+            <p className="flex-1 text-center md:text-left text-gray-300 italic text-sm md:text-base leading-relaxed z-10">
               "{quote.quoteText}"
             </p>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-[1px] bg-pink-500/50"></div>
-              <span className="text-pink-400 font-bold text-sm md:text-base drop-shadow-md">— {quote.quoteAuthor}</span>
-              <div className="w-8 h-[1px] bg-pink-500/50"></div>
+
+            {/* Sağ/Alt: Yazar */}
+            <div className="shrink-0 flex items-center gap-2 z-10 mt-2 md:mt-0">
+              <div className="w-6 h-[1px] bg-pink-500/50 hidden md:block"></div>
+              <span className="text-pink-400 font-bold text-sm drop-shadow-md whitespace-nowrap">
+                — {quote.quoteAuthor}
+              </span>
             </div>
+            
           </div>
-        </section>
+        </div>
       )}
 
       <div className="container mx-auto px-6 md:px-12 mt-12 space-y-12">
