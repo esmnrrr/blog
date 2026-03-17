@@ -53,4 +53,4 @@
 
 # telefon optimizasyonu
 
-# admin de diziyi kim giriyorsa ilk onun adi drama sayfasinda en altta ciksin
+# +++ admin de diziyi kim giriyorsa ilk onun adi drama sayfasinda en altta ciksin

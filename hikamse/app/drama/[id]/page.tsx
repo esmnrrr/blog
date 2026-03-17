@@ -436,6 +436,22 @@ export default function DramaDetail() {
              </div>
           </div>
 
+          {/* EDİTÖR İMZASI KARTI */}
+          {drama.addedByUserName && (
+            <div className="bg-gradient-to-r from-gray-800 to-gray-900 p-6 rounded-lg border border-pink-500/30 shadow-xl flex items-center gap-4 relative overflow-hidden group hover:border-pink-500 transition-colors mt-6">
+              <div className="absolute right-[-10px] top-[-10px] opacity-10 text-7xl transform group-hover:scale-110 transition-transform">✍️</div>
+              <img 
+                src={drama.addedByUserPhoto} 
+                alt={drama.addedByUserName} 
+                className="w-14 h-14 rounded-full border-2 border-pink-500 object-cover relative z-10 shadow-lg" 
+              />
+              <div className="relative z-10">
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Editör: </p>
+                <h4 className="text-pink-400 font-black text-lg drop-shadow-md">{drama.addedByUserName}</h4>
+              </div>
+            </div>
+          )}
+
         {/* YORUMLAR */}
         <div className="md:col-span-3 mt-4 mb-10">
           <h2 className="text-xl font-bold text-pink-500 mb-6 border-b border-gray-700 pb-2 flex items-center">

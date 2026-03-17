@@ -78,6 +78,10 @@ export default function AdminPanel() {
       const docRef = await addDoc(collection(db, "dramas"), {
         ...formData,
         createdAt: new Date(),
+        // Editör Mührü
+        addedByUserId: user.uid,
+        addedByUserName: user.displayName || "Gizemli Editör",
+        addedByUserPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'E'}&background=db2777&color=fff`
       });
       
       // 2. YENİ: Dizi başarıyla eklendi, şimdi abonelere mail at!
