@@ -6,10 +6,38 @@ import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
 import Fuse from "fuse.js";
 import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile} from "firebase/auth";
 
+import MobileMenu from "./MobileMenu";
+
+// --- MOBİL MENÜ İÇİN LİSTELER ---
+const kategoriler = [
+  { isim: "Romantik / Komedi", link: "/kategori/romantik", icon: "💖" },
+  { isim: "Korku / Gerilim", link: "/kategori/korku", icon: "👻" },
+  { isim: "Gizem", link: "/kategori/gizem", icon: "🕵️‍♂️" },
+  { isim: "Polisiye", link: "/kategori/polisiye", icon: "🚓" },
+  { isim: "Fantastik", link: "/kategori/fantastik", icon: "✨" },
+  { isim: "Bilim Kurgu", link: "/kategori/bilim-kurgu", icon: "👽" },
+  { isim: "Dram", link: "/kategori/dram", icon: "🎭" },
+  { isim: "Aksiyon", link: "/kategori/aksiyon", icon: "💥" },
+  { isim: "Aile", link: "/kategori/aile", icon: "👨‍👩‍👧‍👦" },
+  { isim: "Tarihi", link: "/kategori/tarihi", icon: "📜" },
+  { isim: "Program", link: "/kategori/program", icon: "📺" },
+];
+
+const ruhHalleri = [
+  { isim: "Çerezlik (Kafa Dağıtmalık)", link: "/ruh-hali/cerezlik", icon: "🍿" },
+  { isim: "Ağlatanlar (Mendil Tüketen)", link: "/ruh-hali/aglatanlar", icon: "😭" },
+  { isim: "Beyin Yakanlar", link: "/ruh-hali/beyin-yakan", icon: "🤯" },
+  { isim: "Kalp Isıtanlar", link: "/ruh-hali/kalp-isitan", icon: "🥰" },
+  { isim: "Tırnak Yedirten", link: "/ruh-hali/tirnak-yedirten", icon: "💅" },
+  { isim: "İlham Veren", link: "/ruh-hali/ilham-veren", icon: "✨" },
+];
+
 export default function Navbar() {
   const [user, setUser] = useState<any>(null);
   const [menuAcik, setMenuAcik] = useState(false);
   const [ruhHaliAcik, setRuhHaliAcik] = useState(false);
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // ARAMA SİSTEMİ İÇİN STATE'LER
   const [searchQuery, setSearchQuery] = useState("");
@@ -269,6 +297,18 @@ export default function Navbar() {
             </button>
           )}
         </div>
+
+        {/* MOBİL HAMBURGER BUTONU */}
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden text-gray-300 hover:text-white focus:outline-none p-1 ml-3">
+            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {mobileMenuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+
       </div>
 
       {/* Kategori Barı */}
@@ -372,6 +412,23 @@ export default function Navbar() {
           </div>
         </div>
       )}
+
+      {/* HARİCİ DOSYADAN ÇAĞRILAN MOBİL MENÜ */}
+      <MobileMenu 
+        user={user} 
+        handleLogout={handleLogout} 
+        setAuthModalAcik={setAuthModalAcik} 
+        searchQuery={searchQuery} 
+        handleSearch={handleSearch} 
+        setSearchQuery={setSearchQuery} 
+        searchResults={searchResults} 
+        isSearchOpen={isSearchOpen} 
+        setIsSearchOpen={setIsSearchOpen} 
+        mobileMenuOpen={mobileMenuOpen} 
+        setMobileMenuOpen={setMobileMenuOpen} 
+        kategoriler={kategoriler} 
+        ruhHalleri={ruhHalleri} 
+      />
 
     </nav>
   );
