@@ -33,9 +33,24 @@ async function getQuote() {
   }
 }
 
+async function getActors() {
+  try {
+    const querySnapshot = await getDocs(collection(db, "actors"));
+    const actorsData = querySnapshot.docs.map((doc) => ({
+      name: doc.id, // ID olarak ismi kaydetmiştik
+      ...doc.data()
+    }));
+    return actorsData;
+  } catch (error) {
+    console.error("Oyuncular çekilemedi:", error);
+    return [];
+  }
+}
+
 export default async function Home() {
   const dramas: any[] = await getDramas();
   const quote = await getQuote();
+  const actors = await getActors();
 
   // 1. EDİTÖRÜN SEÇİMİ 
   const editorPick: any = dramas.find((d: any) => d.isEditorPick) || 
@@ -55,7 +70,7 @@ export default async function Home() {
     return yearStr.toLowerCase().includes('yakında') || parseInt(yearStr) > 2026;
   });
 
-  // --- KUSURSUZ VE SABİT KART TASARIMI ---
+  // --- KART TASARIMI ---
   const DramaCard = ({ drama, rank, isComingSoon }: { drama: any, rank?: number, isComingSoon?: boolean }) => (
     <Link 
       href={`/drama/${drama.id}`} 
@@ -91,6 +106,32 @@ export default async function Home() {
           <span className="truncate mr-2">{isComingSoon ? (drama?.genre || "Dizi") : drama?.releaseYear}</span>
           {!isComingSoon && <span className="text-yellow-400 font-bold shrink-0">★ {drama?.ratingAvg}</span>}
         </div>
+      </div>
+    </Link>
+  );
+
+  // --- OYUNCU KARTI TASARIMI ---
+  const ActorCard = ({ actor }: { actor: any }) => (
+    <Link 
+      href={`/actor/${encodeURIComponent(actor.name)}`} 
+      className="flex-none w-40 h-60 md:w-48 md:h-72 snap-start group block relative bg-gray-800 rounded-xl overflow-hidden hover:scale-105 hover:z-10 transition-all duration-300 shadow-lg cursor-pointer border border-gray-700 hover:border-blue-500"
+    >
+      <div className="w-full h-full bg-gray-700 relative">
+         {actor?.photoURL ? (
+           <img src={actor.photoURL} alt={actor?.name} className="w-full h-full object-cover" />
+         ) : (
+           <div className="flex items-center justify-center h-full text-gray-500 text-sm">Görsel Yok</div>
+         )}
+         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
+      </div>
+      
+      <div className="absolute bottom-0 left-0 w-full p-4 transform translate-y-1 group-hover:translate-y-0 transition-transform">
+        <h3 className="font-bold text-sm md:text-base text-white truncate drop-shadow-md">{actor?.name}</h3>
+        {actor?.birthDate && (
+           <span className="text-xs text-gray-300 mt-1 block truncate">
+             {new Date(actor.birthDate).getFullYear()}
+           </span>
+        )}
       </div>
     </Link>
   );
@@ -187,7 +228,7 @@ export default async function Home() {
           </section>
         )}
 
-        {/* TOP 10 TREND */}
+        {/* TREND */}
         {trendingDramas.length > 0 && (
           <section>
             <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-2">
@@ -212,6 +253,21 @@ export default async function Home() {
             <div className="flex overflow-x-auto gap-4 md:gap-6 pt-4 pb-8 snap-x snap-mandatory hide-scroll">
               {comingSoonDramas.map((drama: any) => (
                 <DramaCard key={drama.id} drama={drama} isComingSoon={true} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* POPÜLER OYUNCULAR */}
+        {actors && actors.length > 0 && (
+          <section>
+            <div className="flex items-center gap-3 mb-6 border-b border-gray-800 pb-2">
+              <span className="text-3xl">🌟</span>
+              <h2 className="text-2xl font-bold text-blue-400 tracking-wide">Oyuncular</h2>
+            </div>
+            <div className="flex overflow-x-auto gap-4 md:gap-6 pt-4 pb-8 snap-x snap-mandatory hide-scroll">
+              {actors.map((actor: any, idx: number) => (
+                <ActorCard key={idx} actor={actor} />
               ))}
             </div>
           </section>
