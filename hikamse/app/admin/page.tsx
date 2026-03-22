@@ -10,6 +10,8 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [quoteData, setQuoteData] = useState({ text: "", author: "" });
+  const [actorData, setActorData] = useState({ name: "", photoURL: "" });
+  const [actorLoading, setActorLoading] = useState(false);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const router = useRouter();
 
@@ -90,6 +92,24 @@ export default function AdminPanel() {
     setQuoteLoading(false);
   };
 
+  // OYUNCU FOTOĞRAFI KAYDETME 
+  const handleActorSubmit = async (e: any) => {
+    e.preventDefault();
+    setActorLoading(true);
+    try {
+      // Oyuncunun ismini ID olarak kaydediyoruz ki bulması kolay olsun
+      await setDoc(doc(db, "actors", actorData.name.trim()), {
+        photoURL: actorData.photoURL
+      }, { merge: true });
+      alert("Oyuncu fotoğrafı başarıyla eklendi! 📸");
+      setActorData({ name: "", photoURL: "" });
+    } catch (error) {
+      console.error("Oyuncu ekleme hatası:", error);
+      alert("Bir hata oluştu :(");
+    }
+    setActorLoading(false);
+  };
+
   // 2. KAYDET BUTONUNA BASILINCA ÇALIŞACAK SİHİR
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -159,7 +179,22 @@ export default function AdminPanel() {
           </div>
         </div>
 
-        {/* HAFTANIN SÖZÜ DÜZENLEME FORMU (YENİ) */}
+        {/* OYUNCU FOTOĞRAFI EKLEME FORMU */}
+        <form onSubmit={handleActorSubmit} className="bg-gray-800/50 backdrop-blur-md p-6 rounded-2xl border border-blue-500/50 shadow-2xl mb-8 flex flex-col md:flex-row gap-4 items-end">
+          <div className="w-full md:w-1/3">
+            <label className="block text-sm font-bold text-blue-400 mb-2">Oyuncu Adı (Dizidekiyle Aynı Olmalı)</label>
+            <input required type="text" value={actorData.name} onChange={(e) => setActorData({...actorData, name: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="Örn: Song Joong-ki" />
+          </div>
+          <div className="flex-1 w-full">
+            <label className="block text-sm font-bold text-blue-400 mb-2">Fotoğraf Linki (URL)</label>
+            <input required type="text" value={actorData.photoURL} onChange={(e) => setActorData({...actorData, photoURL: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="https://..." />
+          </div>
+          <button type="submit" disabled={actorLoading} className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-lg hover:shadow-blue-500/40 disabled:opacity-50 h-[50px]">
+            {actorLoading ? "⏳" : "Fotoğrafı Kaydet"}
+          </button>
+        </form>
+
+        {/* HAFTANIN SÖZÜ DÜZENLEME FORMU */}
         <form onSubmit={handleQuoteSubmit} className="bg-gray-800/50 backdrop-blur-md p-6 rounded-2xl border border-purple-500/50 shadow-2xl mb-8 flex flex-col md:flex-row gap-4 items-end">
           <div className="flex-1 w-full">
             <label className="block text-sm font-bold text-purple-400 mb-2">Haftanın Sözü ✨</label>

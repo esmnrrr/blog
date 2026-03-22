@@ -1,16 +1,22 @@
 import { db } from '@/app/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
 
-// URL'den gelen oyuncu ismini alıyoruz (params.name)
-export default async function ActorPage({ params }: { params: { name: string } }) {
-  // Linklerdeki %20 gibi boşluk karakterlerini normal metne çeviriyoruz
-  const actorName = decodeURIComponent(params.name);
+export default async function ActorPage({ params }: { params: any }) {
+  // Params'ı güvenli bir şekilde çöz (Next.js güncellemelerine karşı zırh)
+  const resolvedParams = await Promise.resolve(params);
+  const rawName = resolvedParams?.name || "";
+
+  if (rawName === "undefined" || !rawName) {
+    return <div className="text-white text-center mt-32 text-2xl font-bold text-pink-500">Hatalı Bağlantı! Oyuncu ismi bulunamadı.</div>;
+  }
+
+  const actorName = decodeURIComponent(rawName);
 
   // 1. Veritabanındaki TÜM dizileri çek
   const querySnapshot = await getDocs(collection(db, "dramas"));
   
-  // 2. SADECE bu oyuncunun oynadığı dizileri filtrele (cast içinde arıyoruz)
+  // 2. SADECE bu oyuncunun oynadığı dizileri filtrele
   const actorDramas = querySnapshot.docs
     .map(doc => ({ id: doc.id, ...doc.data() as any }))
     .filter(drama => {
@@ -18,7 +24,19 @@ export default async function ActorPage({ params }: { params: { name: string } }
       return castString.toLowerCase().includes(actorName.toLowerCase());
     });
 
-  // --- ANA SAYFADAKİ KUSURSUZ VE SABİT KART TASARIMI ---
+  // 3. OYUNCUNUN ÖZEL FOTOĞRAFINI ÇEK (Eğer admin eklediyse)
+  let actorPhoto = `https://ui-avatars.com/api/?name=${actorName}&background=db2777&color=fff&size=200&bold=true`;
+  try {
+    const actorDocRef = doc(db, "actors", actorName);
+    const actorSnap = await getDoc(actorDocRef);
+    if (actorSnap.exists() && actorSnap.data().photoURL) {
+      actorPhoto = actorSnap.data().photoURL;
+    }
+  } catch (e) {
+    console.error("Fotoğraf çekilemedi", e);
+  }
+
+  // --- KART TASARIMI ---
   const DramaCard = ({ drama }: { drama: any }) => (
     <Link 
       href={`/drama/${drama.id}`} 
@@ -46,19 +64,17 @@ export default async function ActorPage({ params }: { params: { name: string } }
     <main className="min-h-screen bg-gray-900 text-white pb-20 pt-10">
       <div className="container mx-auto px-6 md:px-12">
         
-        {/* OYUNCU PROFİL KARTI (VİTRİN) */}
+        {/* OYUNCU PROFİL KARTI */}
         <div className="bg-gradient-to-r from-gray-800 to-gray-900 border border-pink-500/30 rounded-3xl p-8 md:p-12 shadow-2xl flex flex-col md:flex-row items-center gap-8 mb-12 relative overflow-hidden">
-          {/* Arka plan deseni */}
           <div className="absolute -right-10 -top-10 text-[200px] text-pink-500/5 select-none pointer-events-none font-black">
             {actorName.charAt(0)}
           </div>
           
           <div className="shrink-0 relative z-10">
-            {/* Şimdilik otomatik avatar oluşturuyoruz (UI-Avatars) */}
             <img 
-              src={`https://ui-avatars.com/api/?name=${actorName}&background=db2777&color=fff&size=200&bold=true`} 
+              src={actorPhoto} 
               alt={actorName} 
-              className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.4)] object-cover"
+              className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.4)] object-cover bg-gray-800"
             />
           </div>
           
@@ -75,10 +91,10 @@ export default async function ActorPage({ params }: { params: { name: string } }
           </div>
         </div>
 
-        {/* OYUNCUNUN DİZİLERİ (GRİD TASARIM) */}
+        {/* OYUNCUNUN DİZİLERİ */}
         <div>
           <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2 border-b border-gray-800 pb-3">
-            <span className="text-3xl">🎬</span> Filmografi (Rol Aldığı Yapımlar)
+            <span className="text-3xl">🎬</span> Rol Aldığı Yapımlar
           </h2>
           
           {actorDramas.length > 0 ? (

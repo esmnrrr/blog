@@ -1,4 +1,5 @@
 "use client";
+import Link from 'next/link';
 import { useEffect, useState } from "react";
 import { db, auth } from "@/app/firebase"; 
 import { doc, getDoc, getDocs, setDoc, deleteDoc, collection, addDoc, query, orderBy, onSnapshot, collectionGroup, where, updateDoc } from "firebase/firestore";
@@ -420,9 +421,21 @@ export default function DramaDetail() {
               </div>
               <div>
                 <span className="text-gray-400 block mb-1">👥 Oyuncular</span>
-                <span className="font-semibold text-gray-200 leading-relaxed block">
-                  {drama.cast || "Belirtilmemiş"}
-                </span>
+                {drama.cast ? (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {drama.cast.split(',').map((actor: string, index: number) => {
+                      const cleanName = actor.trim();
+                      if (!cleanName) return null;
+                      return (
+                        <Link key={index} href={`/actor/${cleanName}`} className="bg-gray-700 hover:bg-pink-600 text-white px-3 py-1.5 rounded-full text-xs font-bold transition-all shadow-md">
+                          {cleanName}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <span className="font-semibold text-gray-200">Belirtilmemiş</span>
+                )}
               </div>
             </div>
           </div>
