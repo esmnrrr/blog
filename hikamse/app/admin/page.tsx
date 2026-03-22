@@ -312,32 +312,43 @@ export default function AdminPanel() {
         </form>
 
         {/* OYUNCU BIO */}
-        <form onSubmit={handleActorSubmit} className="bg-gray-800/50 backdrop-blur-md p-6 rounded-2xl border border-blue-500/50 shadow-2xl mb-8 flex flex-col md:flex-row gap-4 items-end">
-          <div className="w-full md:w-1/3">
-            <label className="block text-sm font-bold text-blue-400 mb-2">Oyuncu Adı</label>
-            <input required type="text" value={actorData.name} onChange={(e) => setActorData({...actorData, name: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="Örn: Song Joong-ki" />
-          </div>
-          <div className="flex-1 w-full">
-            <label className="block text-sm font-bold text-blue-400 mb-2">Fotoğraf Linki</label>
-            <input required type="text" value={actorData.photoURL} onChange={(e) => setActorData({...actorData, photoURL: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="https://..." />
-          </div>
-          <div className="w-full flex flex-col md:flex-row gap-4 mt-4">
-            <div className="flex-1">
-              <label className="block text-sm font-bold text-blue-400 mb-2">Doğum Tarihi 🗓️</label>
+        <form onSubmit={handleActorSubmit} className="mt-12 bg-gray-800/50 backdrop-blur-md p-8 rounded-2xl border border-blue-500/50 shadow-2xl space-y-6">
+          
+          <h2 className="text-xl font-bold text-blue-400 border-b border-blue-500/30 pb-3">
+            👤 Oyuncu Profili Ekle
+          </h2>
+
+          {/* 1. Satır: Kısa Bilgiler (Yan Yana 4 Kutu) */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-blue-400 mb-2">Oyuncu Adı</label>
+              <input required type="text" value={actorData.name} onChange={(e) => setActorData({...actorData, name: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="Örn: Song Joong-ki" />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-blue-400 mb-2">Fotoğraf Linki</label>
+              <input required type="text" value={actorData.photoURL} onChange={(e) => setActorData({...actorData, photoURL: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="https://..." />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-blue-400 mb-2">Doğum Tarihi</label>
               <input type="date" value={actorData.birthDate} onChange={(e) => setActorData({...actorData, birthDate: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" />
             </div>
-            <div className="flex-1">
+            <div>
               <label className="block text-sm font-bold text-blue-400 mb-2">Doğum Yeri</label>
-              <input type="text" value={actorData.birthPlace} onChange={(e) => setActorData({...actorData, birthPlace: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="Örn: Daejeon, Güney Kore" />
+              <input type="text" value={actorData.birthPlace} onChange={(e) => setActorData({...actorData, birthPlace: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="Örn: Daejeon" />
             </div>
           </div>
-          <div className="w-full mt-4 mb-4">
-            <label className="block text-sm font-bold text-blue-400 mb-2">Hakkında</label>
-            <textarea rows={3} value={actorData.bio} onChange={(e) => setActorData({...actorData, bio: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="Oyuncunun kariyeri, başarıları, hayat hikayesi..."></textarea>
+
+          {/* 2. Satır: Hakkında ve Kaydet Butonu */}
+          <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-bold text-blue-400 mb-2">Hakkında</label>
+              <textarea rows={2} value={actorData.bio} onChange={(e) => setActorData({...actorData, bio: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="Oyuncunun kariyeri, başarıları, hayat hikayesi..."></textarea>
+            </div>
+            <button type="submit" disabled={actorLoading} className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white text-sm whitespace-nowrap font-bold px-8 py-3 rounded-xl transition-all shadow-lg hover:shadow-blue-500/40 disabled:opacity-50 h-[60px]">
+              {actorLoading ? "⏳ Bekleyin..." : "👤 Oyuncuyu Kaydet"}
+            </button>
           </div>
-          <button type="submit" disabled={actorLoading} className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white text-sm whitespace-nowrap font-bold px-6 py-3 rounded-xl transition-all shadow-lg hover:shadow-blue-500/40 disabled:opacity-50 h-[50px]">
-            {actorLoading ? "⏳" : "Oyuncuyu Kaydet"}
-          </button>
+          
         </form>
 
       </div>
