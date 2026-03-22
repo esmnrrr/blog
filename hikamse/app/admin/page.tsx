@@ -118,8 +118,11 @@ export default function AdminPanel() {
     setSubmitLoading(true);
 
     try {
-      // 1. Önce Firebase "dramas" koleksiyonuna yeni belge ekle (Burada 'docRef' ile ID'sini yakalıyoruz)
-      const docRef = await addDoc(collection(db, "dramas"), {
+      // 1. Dizi adını ID olarak belirliyoruz (Başındaki sonundaki boşlukları temizleyerek)
+      const dramaId = formData.title.trim();
+
+      // 2. Firebase "dramas" koleksiyonuna özel ID ile belge ekle/güncelle
+      await setDoc(doc(db, "dramas", dramaId), {
         ...formData,
         createdAt: new Date(),
         // Editör Mührü
@@ -128,13 +131,13 @@ export default function AdminPanel() {
         addedByUserPhoto: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'E'}&background=db2777&color=fff`
       });
       
-      // 2. YENİ: Dizi başarıyla eklendi, şimdi abonelere mail at!
+      // 3. Dizi başarıyla eklendi, şimdi abonelere mail at!
       try {
         await fetch('/api/new-drama-alert', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: docRef.id,
+            id: dramaId, // Artık özel ismimizi mail sistemine gönderiyoruz
             title: formData.title,
             posterImage: formData.posterImage,
             reviewIntro: formData.reviewIntro
