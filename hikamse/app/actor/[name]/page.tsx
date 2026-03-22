@@ -24,16 +24,45 @@ export default async function ActorPage({ params }: { params: any }) {
       return castString.toLowerCase().includes(actorName.toLowerCase());
     });
 
-  // 3. OYUNCUNUN ÖZEL FOTOĞRAFINI ÇEK (Eğer admin eklediyse)
+  // 3. OYUNCUNUN ÖZEL FOTOĞRAFINI ÇEK
   let actorPhoto = `https://ui-avatars.com/api/?name=${actorName}&background=db2777&color=fff&size=200&bold=true`;
+  let actorBio = "";
+  let actorBirthDate = "";
+  let actorBirthPlace = "";
+
   try {
     const actorDocRef = doc(db, "actors", actorName);
     const actorSnap = await getDoc(actorDocRef);
-    if (actorSnap.exists() && actorSnap.data().photoURL) {
-      actorPhoto = actorSnap.data().photoURL;
+    if (actorSnap.exists()) {
+      const data = actorSnap.data();
+      if (data.photoURL) actorPhoto = data.photoURL;
+      actorBio = data.bio || "";
+      actorBirthDate = data.birthDate || "";
+      actorBirthPlace = data.birthPlace || "";
     }
   } catch (e) {
-    console.error("Fotoğraf çekilemedi", e);
+    console.error("Oyuncu bilgileri çekilemedi", e);
+  }
+
+  // OTOMATİK YAŞ HESAPLAMA 
+  let calculatedAge = null;
+  let formattedBirthDate = "";
+
+  if (actorBirthDate) {
+    const birthDateObj = new Date(actorBirthDate);
+    const today = new Date();
+    
+    let age = today.getFullYear() - birthDateObj.getFullYear();
+    const m = today.getMonth() - birthDateObj.getMonth();
+    
+    // Eğer bu yılki doğum günü henüz gelmediyse yaşı 1 düşür
+    if (m < 0 || (m === 0 && today.getDate() < birthDateObj.getDate())) {
+      age--;
+    }
+    calculatedAge = age;
+
+    // Tarihi Türkçe yap (Örn: 19 Eylül 1985)
+    formattedBirthDate = birthDateObj.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 
   // --- KART TASARIMI ---
@@ -90,6 +119,40 @@ export default async function ActorPage({ params }: { params: any }) {
             </p>
           </div>
         </div>
+
+        {/* HAKKINDA (BİYOGRAFİ) BÖLÜMÜ */}
+        {(actorBio || actorBirthDate || actorBirthPlace) && (
+          <div className="bg-gray-800/40 border border-gray-700/50 rounded-3xl p-6 md:p-10 mb-12 shadow-lg backdrop-blur-sm">
+            <h3 className="text-xl font-bold text-pink-500 mb-6 flex items-center gap-2 border-b border-gray-700/50 pb-3">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              Hakkında
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              {(actorBirthDate || actorBirthPlace) && (
+                <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-700/30 flex items-center gap-4">
+                  <div className="bg-pink-500/10 p-3 rounded-lg text-2xl">🎂</div>
+                  <div>
+                    <span className="text-gray-400 text-[10px] font-bold uppercase tracking-widest block mb-0.5">Doğum & Yaş</span>
+                    <span className="text-gray-200 font-medium text-sm block">
+                      {formattedBirthDate} 
+                      {calculatedAge !== null && <span className="text-pink-400 font-bold ml-1">({calculatedAge} yaşında)</span>}
+                    </span>
+                    {actorBirthPlace && <span className="block text-xs text-gray-400 mt-1">📍 {actorBirthPlace}</span>}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {actorBio && (
+              <div className="bg-gray-900/30 p-5 md:p-6 rounded-xl border border-gray-700/30">
+                <p className="text-gray-300 leading-relaxed text-sm md:text-base whitespace-pre-line font-light">
+                  {actorBio}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* OYUNCUNUN DİZİLERİ */}
         <div>

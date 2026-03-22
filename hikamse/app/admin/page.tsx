@@ -10,17 +10,16 @@ export default function AdminPanel() {
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [quoteData, setQuoteData] = useState({ text: "", author: "" });
-  const [actorData, setActorData] = useState({ name: "", photoURL: "" });
+  const [actorData, setActorData] = useState({ name: "", photoURL: "", birthDate: "", birthPlace: "", bio: "" });
   const [actorLoading, setActorLoading] = useState(false);
-  const [quoteLoading, setQuoteLoading] = useState(false);
-  const router = useRouter();
+  const [quoteLoading, setQuoteLoading] = useState(false);  const router = useRouter();
 
   // Dizi Ekleme Formunun Hafızası
   const [formData, setFormData] = useState({
     title: "",
     releaseYear: "",
     ratingAvg: "",
-    genre: "romantik", // Varsayılan tür
+    genre: "romantik", 
     mood: "cerezlik",  
     cast: "",          
     episodeCount: "",
@@ -99,10 +98,13 @@ export default function AdminPanel() {
     try {
       // Oyuncunun ismini ID olarak kaydediyoruz ki bulması kolay olsun
       await setDoc(doc(db, "actors", actorData.name.trim()), {
-        photoURL: actorData.photoURL
+        photoURL: actorData.photoURL,
+        birthDate: actorData.birthDate,
+        birthPlace: actorData.birthPlace,
+        bio: actorData.bio
       }, { merge: true });
-      alert("Oyuncu fotoğrafı başarıyla eklendi! 📸");
-      setActorData({ name: "", photoURL: "" });
+      alert("Oyuncu başarıyla eklendi/güncellendi! 📸");
+      setActorData({ name: "", photoURL: "", birthDate: "", birthPlace: "", bio: "" });
     } catch (error) {
       console.error("Oyuncu ekleme hatası:", error);
       alert("Bir hata oluştu :(");
@@ -188,6 +190,20 @@ export default function AdminPanel() {
           <div className="flex-1 w-full">
             <label className="block text-sm font-bold text-blue-400 mb-2">Fotoğraf Linki (URL)</label>
             <input required type="text" value={actorData.photoURL} onChange={(e) => setActorData({...actorData, photoURL: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="https://..." />
+          </div>
+          <div className="w-full flex flex-col md:flex-row gap-4 mt-4">
+            <div className="flex-1">
+              <label className="block text-sm font-bold text-blue-400 mb-2">Doğum Tarihi 🗓️</label>
+              <input type="date" value={actorData.birthDate} onChange={(e) => setActorData({...actorData, birthDate: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" />
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-bold text-blue-400 mb-2">Doğum Yeri</label>
+              <input type="text" value={actorData.birthPlace} onChange={(e) => setActorData({...actorData, birthPlace: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="Örn: Daejeon, Güney Kore" />
+            </div>
+          </div>
+          <div className="w-full mt-4 mb-4">
+            <label className="block text-sm font-bold text-blue-400 mb-2">Biyografi / Hakkında </label>
+            <textarea rows={3} value={actorData.bio} onChange={(e) => setActorData({...actorData, bio: e.target.value})} className="w-full bg-gray-900 border border-gray-600 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition" placeholder="Oyuncunun kariyeri, başarıları, hayat hikayesi..."></textarea>
           </div>
           <button type="submit" disabled={actorLoading} className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-lg hover:shadow-blue-500/40 disabled:opacity-50 h-[50px]">
             {actorLoading ? "⏳" : "Fotoğrafı Kaydet"}
